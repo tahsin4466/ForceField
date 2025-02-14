@@ -12,7 +12,7 @@ export class FirstPersonControls {
     private moveRight: boolean = false;
     private yawObject: THREE.Object3D = new THREE.Object3D();
     private pitchObject: THREE.Object3D = new THREE.Object3D();
-    private sensitivity: number = 0.005;
+    private sensitivity: number = 0.01;
     private damping: number = 0.1; // Smooth movement
 
     constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
@@ -59,16 +59,13 @@ export class FirstPersonControls {
     private onMouseMove(event: MouseEvent) {
         const movementX = event.movementX || 0;
         const movementY = event.movementY || 0;
-
-        // Rotate left/right (yaw) affects yawObject
+        // Only update rotation, ensure no scaling effects
         this.yawObject.rotation.y -= movementX * this.sensitivity;
-
-        // Rotate up/down (pitch) affects pitchObject
         this.pitchObject.rotation.x -= movementY * this.sensitivity;
-
-        // Limit pitch to prevent looking too far up/down
+        // Limit pitch to prevent flipping upside down
         this.pitchObject.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitchObject.rotation.x));
     }
+
 
     update(deltaTime: number) {
         // Reset movement direction
