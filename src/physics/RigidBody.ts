@@ -29,4 +29,13 @@ export class RigidBody {
         // Reset acceleration
         this.acceleration = { x: 0, y: 0, z: 0 };
     }
+
+    isColliding(other: RigidBody): boolean {
+        return (
+            Math.abs(this.position.x - other.position.x) < 1 &&
+            Math.abs(this.position.y - other.position.y) < 1 &&
+            Math.abs(this.position.z - other.position.z) < 1
+        );
+    }
+
 }
