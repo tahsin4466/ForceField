@@ -6,6 +6,7 @@ export class TestWorld {
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     controls: FirstPersonControls;
+    clock: THREE.Clock;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -13,6 +14,8 @@ export class TestWorld {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;  // Enable shadows
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
 
         // Floor
@@ -33,20 +36,27 @@ export class TestWorld {
             this.scene.add(cube);
         }
 
-        // Basic Lighting
+        // Lighting
         const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(5, 10, 5);
+        light.castShadow = true;  // Enable shadow casting
         this.scene.add(light);
 
+        // Add ambient light to avoid pitch-black shadows
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
         // Camera controls
-        this.controls = new FirstPersonControls(this.camera);
+        this.controls = new FirstPersonControls(this.camera, this.scene);
+        this.clock = new THREE.Clock();  // Initialize clock for accurate deltaTime
 
         this.animate();
     }
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        this.controls.update();
+        const deltaTime = this.clock.getDelta();  // Get time since last frame
+        this.controls.update(deltaTime);
         this.renderer.render(this.scene, this.camera);
     }
 }
