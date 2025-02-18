@@ -48,6 +48,13 @@ export class TestWorld {
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
 
+        window.addEventListener("keydown", (event) => {
+            if (event.code === "KeyE") {
+                const explosionPosition = this.controls.getPosition();
+                this.createExplosion(explosionPosition, 10, 50);
+            }
+        });
+
         this.animate();
     }
 
@@ -76,8 +83,8 @@ export class TestWorld {
                 name: "Ice Cube",
                 color: 0x00ffff, // Cyan
                 position: { x: 4, y: 6, z: 0 },
-                mass: 3,
-                friction: 0.1,
+                mass: 1,
+                friction: 0.05,
                 bounciness: 0.3
             },
             {
@@ -107,6 +114,56 @@ export class TestWorld {
             this.cubes.push({ mesh, body });
 
             console.log(`Added ${name} at (${position.x}, ${position.y}, ${position.z})`);
+        });
+    }
+
+    /**
+     * Creates an explosion force at a given position.
+     * @param position The center of the explosion
+     * @param forceMagnitude Maximum explosion force
+     * @param radius Affects how far the explosion influences objects
+     */
+    createExplosion(position: THREE.Vector3, forceMagnitude: number, radius: number) {
+        console.log(`Explosion triggered at (${position.x}, ${position.y}, ${position.z})`);
+
+        // Create a red explosion marker (small sphere)
+        const explosionGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const explosionMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const explosionMarker = new THREE.Mesh(explosionGeometry, explosionMaterial);
+        explosionMarker.position.copy(position);
+        this.scene.add(explosionMarker);
+
+        // Remove explosion marker after 0.5 seconds
+        setTimeout(() => {
+            this.scene.remove(explosionMarker);
+        }, 500);
+
+        this.cubes.forEach(({ body }) => {
+            // Calculate distance from explosion center
+            const dx = body.position.x - position.x;
+            const dy = body.position.y - position.y;
+            const dz = body.position.z - position.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            if (distance < radius) {
+                // Normalize the direction vector
+                const direction = {
+                    x: dx / distance,
+                    y: dy / distance,
+                    z: dz / distance,
+                };
+
+                // Calculate force falloff (closer objects get more force)
+                const falloff = 1 - (distance / radius);
+                const appliedForce = forceMagnitude * falloff * (1 / body.mass); // Lighter objects react more
+
+                // Apply explosion force as impulse
+                body.applyForce({
+                    x: direction.x * appliedForce,
+                    y: direction.y * appliedForce,
+                    z: direction.z * appliedForce,
+                });
+            }
         });
     }
 
