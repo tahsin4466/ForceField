@@ -4,6 +4,7 @@ export class PhysicsWorld {
     private objects: RigidBody[] = [];
     private gravity: number = -9.81; // Earth gravity (m/s²)
     private groundLevel: number = 0; // Define ground at y = 0
+    private groundFriction: number = 0.3; // Ground frictional coefficient
 
     addObject(object: RigidBody) {
         this.objects.push(object);
@@ -15,14 +16,16 @@ export class PhysicsWorld {
             obj.applyForce({ x: 0, y: this.gravity * obj.mass, z: 0 });
             obj.update(deltaTime);
 
-            // Floor Collision: Stop objects from falling below ground
+            // Floor Collision
             if (obj.min.y < this.groundLevel) {
-                obj.position.y = this.groundLevel + obj.size.y / 2; // Place it at correct height
-                obj.velocity.y = 0; // Stop downward movement
+                obj.position.y = this.groundLevel + obj.size.y / 2;
+                obj.velocity.y = 0;
+                // Apply friction when touching the ground
+                this.applyFriction(obj, this.groundFriction);
             }
         });
 
-        // Object-to-Object Collision Handling (Basic AABB)
+        // Handle object collisions
         for (let i = 0; i < this.objects.length; i++) {
             for (let j = i + 1; j < this.objects.length; j++) {
                 if (this.objects[i].isColliding(this.objects[j])) {
@@ -30,6 +33,12 @@ export class PhysicsWorld {
                 }
             }
         }
+    }
+
+    private applyFriction(obj: RigidBody, groundFriction: number) {
+        // Friction force = -friction_coefficient * velocity
+        obj.velocity.x *= 1 - Math.min(groundFriction, 1);
+        obj.velocity.z *= 1 - Math.min(groundFriction, 1);
     }
 
     // Basic Collision Resolution (Push Objects Apart)
@@ -56,10 +65,13 @@ export class PhysicsWorld {
             objA.position.z += pushAmount;
             objB.position.z -= pushAmount;
         }
-
-        // Optional: Zero out velocity upon collision
-        objA.velocity = { x: 0, y: 0, z: 0 };
-        objB.velocity = { x: 0, y: 0, z: 0 };
+        
+        // Apply friction during object collisions
+        const combinedFriction = (objA.friction + objB.friction) / 2;
+        objA.velocity.x *= 1 - combinedFriction;
+        objA.velocity.z *= 1 - combinedFriction;
+        objB.velocity.x *= 1 - combinedFriction;
+        objB.velocity.z *= 1 - combinedFriction;
     }
 
 }
