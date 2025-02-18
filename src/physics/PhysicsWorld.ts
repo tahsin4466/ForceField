@@ -17,13 +17,15 @@ export class PhysicsWorld {
             obj.applyForce({ x: 0, y: this.gravity * obj.mass, z: 0 });
             obj.update(deltaTime);
 
-            // Floor Collision
+            // Floor Collision Handling
             if (obj.min.y < this.groundLevel) {
                 obj.position.y = this.groundLevel + obj.size.y / 2;
-                // Apply object-specific bounciness
-                obj.velocity.y *= -obj.bounciness;
-                // If the bounce is too small, stop bouncing completely
-                if (Math.abs(obj.velocity.y) < 0.1) obj.velocity.y = 0;
+                // Stop downward movement if the object is at rest
+                if (Math.abs(obj.velocity.y) < 0.1) {
+                    obj.velocity.y = 0;
+                } else {
+                    obj.velocity.y *= -obj.bounciness;
+                }
                 // Apply friction smoothly
                 this.applyFriction(obj, this.groundFriction);
             }
@@ -35,12 +37,12 @@ export class PhysicsWorld {
     }
 
     private applyFriction(obj: RigidBody, groundFriction: number) {
-        // Use smooth friction application to avoid sudden stops
-        const frictionFactor = Math.max(0, 1 - groundFriction * 0.1); // Less aggressive per frame
+        // Smooth friction application to avoid abrupt stops
+        const frictionFactor = Math.max(0, 1 - groundFriction * 0.1);
         obj.velocity.x *= frictionFactor;
         obj.velocity.z *= frictionFactor;
 
-        // If velocity is below a threshold, stop completely (avoids infinite sliding)
+        // Stop objects completely if they move too slowly
         if (Math.abs(obj.velocity.x) < 0.01) obj.velocity.x = 0;
         if (Math.abs(obj.velocity.z) < 0.01) obj.velocity.z = 0;
     }

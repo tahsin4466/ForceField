@@ -17,7 +17,7 @@ function resolveCollision(objA: RigidBody, objB: RigidBody) {
     const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
 
-    // Find smallest axis of penetration and separate objects smoothly
+    // Find the smallest axis of penetration and separate objects smoothly
     if (overlapX < overlapY && overlapX < overlapZ) {
         const pushAmount = overlapX * 0.5;
         objA.position.x += pushAmount;
@@ -27,6 +27,10 @@ function resolveCollision(objA: RigidBody, objB: RigidBody) {
         objA.position.y += pushAmount;
         objB.position.y -= pushAmount;
 
+        // If objects are resting, set velocity to 0 to prevent floating
+        if (Math.abs(objA.velocity.y) < 0.5) objA.velocity.y = 0;
+        if (Math.abs(objB.velocity.y) < 0.5) objB.velocity.y = 0;
+
         // Apply separate bounciness per object
         if (objA.bounciness > 0) {
             objA.velocity.y = -objA.velocity.y * objA.bounciness;
@@ -34,18 +38,13 @@ function resolveCollision(objA: RigidBody, objB: RigidBody) {
         if (objB.bounciness > 0) {
             objB.velocity.y = -objB.velocity.y * objB.bounciness;
         }
-
-        // Ensure small bounces don't get killed too early
-        if (Math.abs(objA.velocity.y) < 0.1) objA.velocity.y = 0;
-        if (Math.abs(objB.velocity.y) < 0.1) objB.velocity.y = 0;
-
     } else {
         const pushAmount = overlapZ * 0.5;
         objA.position.z += pushAmount;
         objB.position.z -= pushAmount;
     }
 
-    // Apply friction
+    // Apply friction after collision resolution
     const combinedFriction = (objA.friction + objB.friction) / 2;
     applyFrictionDuringCollision(objA, combinedFriction);
     applyFrictionDuringCollision(objB, combinedFriction);

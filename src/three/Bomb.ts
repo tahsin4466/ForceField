@@ -21,8 +21,8 @@ export class Bomb {
      * Detonates this bomb by triggering an explosion and removing itself from the scene.
      */
     detonate(scene: THREE.Scene, createExplosion: (position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) => void) {
-        const explosionForce = this.big ? 100000 : 1000;
-        const explosionRadius = this.big ? 5000 : 200;
+        const explosionForce = this.big ? 5000 : 1000; // N
+        const explosionRadius = this.big ? 20 : 5; // m
         const explosionColor = this.big ? 0xffa500 : 0xff0000;
 
         createExplosion(this.mesh.position.clone(), explosionForce, explosionRadius, explosionColor);

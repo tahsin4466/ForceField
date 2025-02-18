@@ -69,7 +69,8 @@ export class TestWorld {
                 name: "Crate",
                 color: 0x8B4513, // Brown
                 position: { x: -4, y: 5, z: 0 },
-                mass: 5,
+                mass: 10, // kg
+                size: { x: 0.5, y: 0.5, z: 0.5 }, // 50 cm cube
                 friction: 1,
                 bounciness: 0.1
             },
@@ -77,7 +78,8 @@ export class TestWorld {
                 name: "Bouncy Ball",
                 color: 0xff0000, // Red
                 position: { x: 0, y: 8, z: 0 },
-                mass: 1,
+                mass: 0.6, // kg (basketball)
+                size: { x: 0.24, y: 0.24, z: 0.24 }, // 24 cm (basketball diameter)
                 friction: 0.2,
                 bounciness: 0.9
             },
@@ -85,7 +87,8 @@ export class TestWorld {
                 name: "Ice Cube",
                 color: 0x00ffff, // Cyan
                 position: { x: 4, y: 6, z: 0 },
-                mass: 1,
+                mass: 0.2, // kg (ice cube)
+                size: { x: 0.05, y: 0.05, z: 0.05 }, // 5 cm cube
                 friction: 0.05,
                 bounciness: 0.3
             },
@@ -93,15 +96,16 @@ export class TestWorld {
                 name: "Metal Block",
                 color: 0xaaaaaa, // Gray
                 position: { x: -2, y: 7, z: 3 },
-                mass: 10,
+                mass: 50, // kg (heavy metal block)
+                size: { x: 1, y: 1, z: 1 }, // 1 meter cube
                 friction: 0.6,
                 bounciness: 0.0
             }
         ];
 
-        testObjects.forEach(({ name, color, position, mass, friction, bounciness }) => {
+        testObjects.forEach(({ name, color, size, position, mass, friction, bounciness }) => {
             // Create mesh
-            const geometry = new THREE.BoxGeometry();
+            const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
             const material = new THREE.MeshStandardMaterial({ color });
             const mesh = new THREE.Mesh(geometry, material);
             mesh.castShadow = true;
@@ -180,7 +184,11 @@ export class TestWorld {
         this.physicsWorld.update(deltaTime);
 
         this.cubes.forEach(({ mesh, body }) => {
-            mesh.position.set(body.position.x, body.position.y, body.position.z);
+            mesh.position.set(
+                body.position.x,
+                body.position.y,  // Do NOT subtract size.y/2 anymore!
+                body.position.z
+            );
         });
 
         this.renderer.render(this.scene, this.camera);
