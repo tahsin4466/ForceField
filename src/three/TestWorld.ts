@@ -49,9 +49,12 @@ export class TestWorld {
         this.clock = new THREE.Clock();
 
         window.addEventListener("keydown", (event) => {
+            const explosionPosition = this.controls.getPosition();
             if (event.code === "KeyE") {
-                const explosionPosition = this.controls.getPosition();
-                this.createExplosion(explosionPosition, 10, 50);
+                this.createExplosion(explosionPosition, 10, 50, 0xff0000); // Small explosion
+            }
+            if (event.code === "KeyL") {
+                this.createExplosion(explosionPosition, 5000, 200, 0xffa500); // Large explosion
             }
         });
 
@@ -122,21 +125,22 @@ export class TestWorld {
      * @param position The center of the explosion
      * @param forceMagnitude Maximum explosion force
      * @param radius Affects how far the explosion influences objects
+     * @param color Explosion marker color
      */
-    createExplosion(position: THREE.Vector3, forceMagnitude: number, radius: number) {
-        console.log(`Explosion triggered at (${position.x}, ${position.y}, ${position.z})`);
+    createExplosion(position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) {
+        console.log(`Explosion triggered at (${position.x}, ${position.y}, ${position.z}) with radius ${radius}`);
 
-        // Create a red explosion marker (small sphere)
-        const explosionGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-        const explosionMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        // Create explosion marker (small sphere)
+        const explosionGeometry = new THREE.SphereGeometry(radius * 0.02, 16, 16);
+        const explosionMaterial = new THREE.MeshBasicMaterial({ color });
         const explosionMarker = new THREE.Mesh(explosionGeometry, explosionMaterial);
         explosionMarker.position.copy(position);
         this.scene.add(explosionMarker);
 
-        // Remove explosion marker after 0.5 seconds
+        // Remove explosion marker after 0.75 seconds
         setTimeout(() => {
             this.scene.remove(explosionMarker);
-        }, 500);
+        }, 750);
 
         this.cubes.forEach(({ body }) => {
             // Calculate distance from explosion center
@@ -153,9 +157,11 @@ export class TestWorld {
                     z: dz / distance,
                 };
 
-                // Calculate force falloff (closer objects get more force)
-                const falloff = 1 - (distance / radius);
-                const appliedForce = forceMagnitude * falloff * (1 / body.mass); // Lighter objects react more
+                // Apply **Inverse Square Law Falloff**
+                const falloff = 1 / (1 + (distance / radius) ** 2);
+
+                // Adjust force so lighter objects react more
+                const appliedForce = forceMagnitude * falloff * (1 / body.mass);
 
                 // Apply explosion force as impulse
                 body.applyForce({
