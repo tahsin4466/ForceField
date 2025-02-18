@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
+import { Bomb } from './Bomb';
 
 export class TestWorld {
     scene: THREE.Scene;
@@ -11,6 +12,7 @@ export class TestWorld {
     clock: THREE.Clock;
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
+    bombs: Bomb[] = []; // Now using Bomb objects
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -22,17 +24,17 @@ export class TestWorld {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
 
-        this.physicsWorld = new PhysicsWorld(); // Initialize physics world
+        this.physicsWorld = new PhysicsWorld();
 
         // Floor (Static - No RigidBody)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         this.scene.add(floor);
+        this.scene.background = new THREE.Color(0x87CEEB);
 
-        // Add test objects with unique physics properties
         this.addTestObjects();
 
         // Lighting
@@ -44,26 +46,23 @@ export class TestWorld {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        // Camera controls
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
 
         window.addEventListener("keydown", (event) => {
-            const explosionPosition = this.controls.getPosition();
-            if (event.code === "KeyE") {
-                this.createExplosion(explosionPosition, 10, 50, 0xff0000); // Small explosion
+            const playerPosition = this.controls.getPosition();
+            if (event.code === "KeyB") {
+                const isBig = event.shiftKey;
+                this.placeBomb(playerPosition, isBig);
             }
-            if (event.code === "KeyL") {
-                this.createExplosion(explosionPosition, 5000, 200, 0xffa500); // Large explosion
+            if (event.code === "KeyE") {
+                this.detonateBombs();
             }
         });
 
         this.animate();
     }
 
-    /**
-     * Adds various test objects with different physics properties
-     */
     addTestObjects() {
         const testObjects = [
             {
@@ -120,50 +119,50 @@ export class TestWorld {
         });
     }
 
-    /**
-     * Creates an explosion force at a given position.
-     * @param position The center of the explosion
-     * @param forceMagnitude Maximum explosion force
-     * @param radius Affects how far the explosion influences objects
-     * @param color Explosion marker color
-     */
+    placeBomb(position: THREE.Vector3, big: boolean) {
+        console.log(`Placing ${big ? "BIG" : "small"} bomb at (${position.x}, ${position.y}, ${position.z})`);
+        const bomb = new Bomb(position, big, this.scene);
+        this.bombs.push(bomb);
+    }
+
+    detonateBombs() {
+        console.log(`Detonating ${this.bombs.length} bomb(s)!`);
+
+        this.bombs.forEach((bomb) => {
+            bomb.detonate(this.scene, this.createExplosion.bind(this));
+        });
+
+        this.bombs = []; // Clear all bombs
+    }
+
     createExplosion(position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) {
         console.log(`Explosion triggered at (${position.x}, ${position.y}, ${position.z}) with radius ${radius}`);
 
-        // Create explosion marker (small sphere)
         const explosionGeometry = new THREE.SphereGeometry(radius * 0.02, 16, 16);
         const explosionMaterial = new THREE.MeshBasicMaterial({ color });
         const explosionMarker = new THREE.Mesh(explosionGeometry, explosionMaterial);
         explosionMarker.position.copy(position);
         this.scene.add(explosionMarker);
 
-        // Remove explosion marker after 0.75 seconds
         setTimeout(() => {
             this.scene.remove(explosionMarker);
-        }, 750);
+        }, 50);
 
         this.cubes.forEach(({ body }) => {
-            // Calculate distance from explosion center
             const dx = body.position.x - position.x;
             const dy = body.position.y - position.y;
             const dz = body.position.z - position.z;
             const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
             if (distance < radius) {
-                // Normalize the direction vector
                 const direction = {
                     x: dx / distance,
                     y: dy / distance,
                     z: dz / distance,
                 };
-
-                // Apply **Inverse Square Law Falloff**
-                const falloff = 1 / (1 + (distance / radius) ** 2);
-
-                // Adjust force so lighter objects react more
+                const falloff = 1 / Math.max(distance * distance, 1);
                 const appliedForce = forceMagnitude * falloff * (1 / body.mass);
 
-                // Apply explosion force as impulse
                 body.applyForce({
                     x: direction.x * appliedForce,
                     y: direction.y * appliedForce,
@@ -180,7 +179,6 @@ export class TestWorld {
         this.controls.update(deltaTime);
         this.physicsWorld.update(deltaTime);
 
-        // Sync cube meshes with their rigid bodies
         this.cubes.forEach(({ mesh, body }) => {
             mesh.position.set(body.position.x, body.position.y, body.position.z);
         });
