@@ -3,12 +3,31 @@ export class RigidBody {
     velocity: { x: number, y: number, z: number };
     acceleration: { x: number, y: number, z: number };
     mass: number;
+    size: { x: number, y: number, z: number }; // Width, height, depth
 
-    constructor(mass = 1) {
+    constructor(mass = 1, size = { x: 1, y: 1, z: 1 }) {
         this.mass = mass;
         this.position = { x: 0, y: 0, z: 0 };
         this.velocity = { x: 0, y: 0, z: 0 };
         this.acceleration = { x: 0, y: 0, z: 0 };
+        this.size = size;
+    }
+
+    // Get bounding box (min and max coordinates)
+    get min() {
+        return {
+            x: this.position.x - this.size.x / 2,
+            y: this.position.y - this.size.y / 2,
+            z: this.position.z - this.size.z / 2,
+        };
+    }
+
+    get max() {
+        return {
+            x: this.position.x + this.size.x / 2,
+            y: this.position.y + this.size.y / 2,
+            z: this.position.z + this.size.z / 2,
+        };
     }
 
     applyForce(force: { x: number, y: number, z: number }) {
@@ -30,12 +49,15 @@ export class RigidBody {
         this.acceleration = { x: 0, y: 0, z: 0 };
     }
 
+    // Check AABB Collision with another RigidBody
     isColliding(other: RigidBody): boolean {
         return (
-            Math.abs(this.position.x - other.position.x) < 1 &&
-            Math.abs(this.position.y - other.position.y) < 1 &&
-            Math.abs(this.position.z - other.position.z) < 1
+            this.min.x < other.max.x &&
+            this.max.x > other.min.x &&
+            this.min.y < other.max.y &&
+            this.max.y > other.min.y &&
+            this.min.z < other.max.z &&
+            this.max.z > other.min.z
         );
     }
-
 }
