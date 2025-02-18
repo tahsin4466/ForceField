@@ -20,13 +20,14 @@ export class PhysicsWorld {
             // Floor Collision
             if (obj.min.y < this.groundLevel) {
                 obj.position.y = this.groundLevel + obj.size.y / 2;
-
-                // Instead of setting velocity to zero, dampen it gradually
-                obj.velocity.y *= -0.2; // Small bounce instead of hard stop
-
+                // Apply object-specific bounciness
+                obj.velocity.y *= -obj.bounciness;
+                // If the bounce is too small, stop bouncing completely
+                if (Math.abs(obj.velocity.y) < 0.1) obj.velocity.y = 0;
                 // Apply friction smoothly
                 this.applyFriction(obj, this.groundFriction);
             }
+
         });
 
         // Handle object collisions (refactored into Collisions.ts)

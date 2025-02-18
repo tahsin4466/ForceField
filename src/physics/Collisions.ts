@@ -1,4 +1,5 @@
 import { RigidBody } from './RigidBody';
+import { applyFrictionDuringCollision } from './Friction';
 
 export function handleCollisions(objects: RigidBody[]) {
     for (let i = 0; i < objects.length; i++) {
@@ -16,7 +17,7 @@ function resolveCollision(objA: RigidBody, objB: RigidBody) {
     const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
 
-    // Find the smallest axis of penetration and separate objects smoothly
+    // Find smallest axis of penetration and separate objects smoothly
     if (overlapX < overlapY && overlapX < overlapZ) {
         const pushAmount = overlapX * 0.5;
         objA.position.x += pushAmount;
@@ -26,31 +27,26 @@ function resolveCollision(objA: RigidBody, objB: RigidBody) {
         objA.position.y += pushAmount;
         objB.position.y -= pushAmount;
 
-        // Bounciness Logic: Control how much velocity is retained after collision
-        const combinedBounciness = (objA.bounciness + objB.bounciness) / 2;
-        objA.velocity.y *= -combinedBounciness;
-        objB.velocity.y *= -combinedBounciness;
+        // Apply separate bounciness per object
+        if (objA.bounciness > 0) {
+            objA.velocity.y = -objA.velocity.y * objA.bounciness;
+        }
+        if (objB.bounciness > 0) {
+            objB.velocity.y = -objB.velocity.y * objB.bounciness;
+        }
+
+        // Ensure small bounces don't get killed too early
+        if (Math.abs(objA.velocity.y) < 0.1) objA.velocity.y = 0;
+        if (Math.abs(objB.velocity.y) < 0.1) objB.velocity.y = 0;
+
     } else {
         const pushAmount = overlapZ * 0.5;
         objA.position.z += pushAmount;
         objB.position.z -= pushAmount;
     }
 
-    // Apply friction during collisions
+    // Apply friction
     const combinedFriction = (objA.friction + objB.friction) / 2;
     applyFrictionDuringCollision(objA, combinedFriction);
     applyFrictionDuringCollision(objB, combinedFriction);
 }
-
-// Friction during collisions (gradual slow down, not an instant stop)
-function applyFrictionDuringCollision(obj: RigidBody, friction: number) {
-    const frictionFactor = Math.max(0, 1 - friction * 0.05); // Less aggressive friction
-
-    obj.velocity.x *= frictionFactor;
-    obj.velocity.z *= frictionFactor;
-
-    // If the object is moving slowly, let it gradually stop
-    if (Math.abs(obj.velocity.x) < 0.01) obj.velocity.x = 0;
-    if (Math.abs(obj.velocity.z) < 0.01) obj.velocity.z = 0;
-}
-

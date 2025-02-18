@@ -22,7 +22,7 @@ export class TestWorld {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
 
-        this.physicsWorld = new PhysicsWorld();  // Initialize physics world
+        this.physicsWorld = new PhysicsWorld(); // Initialize physics world
 
         // Floor (Static - No RigidBody)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);
@@ -32,29 +32,8 @@ export class TestWorld {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // Scene Objects (Dynamic - With RigidBody)
-        for (let i = 0; i < 5; i++) {
-            const cubeGeometry = new THREE.BoxGeometry();
-            const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-            const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            cube.castShadow = true;
-
-            // Set initial position
-            const position = {
-                x: Math.random() * 10 - 5,
-                y: 5 + Math.random() * 2, // Spawn above the ground
-                z: Math.random() * 10 - 5
-            };
-            cube.position.set(position.x, position.y, position.z);
-            this.scene.add(cube);
-
-            // Create RigidBody for physics
-            const body = new RigidBody(1);
-            body.position = { ...position };
-
-            this.physicsWorld.addObject(body);
-            this.cubes.push({ mesh: cube, body });
-        }
+        // Add test objects with unique physics properties
+        this.addTestObjects();
 
         // Lighting
         const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -70,6 +49,65 @@ export class TestWorld {
         this.clock = new THREE.Clock();
 
         this.animate();
+    }
+
+    /**
+     * Adds various test objects with different physics properties
+     */
+    addTestObjects() {
+        const testObjects = [
+            {
+                name: "Crate",
+                color: 0x8B4513, // Brown
+                position: { x: -4, y: 5, z: 0 },
+                mass: 5,
+                friction: 1,
+                bounciness: 0.1
+            },
+            {
+                name: "Bouncy Ball",
+                color: 0xff0000, // Red
+                position: { x: 0, y: 8, z: 0 },
+                mass: 1,
+                friction: 0.2,
+                bounciness: 0.9
+            },
+            {
+                name: "Ice Cube",
+                color: 0x00ffff, // Cyan
+                position: { x: 4, y: 6, z: 0 },
+                mass: 3,
+                friction: 0.1,
+                bounciness: 0.3
+            },
+            {
+                name: "Metal Block",
+                color: 0xaaaaaa, // Gray
+                position: { x: -2, y: 7, z: 3 },
+                mass: 10,
+                friction: 0.6,
+                bounciness: 0.0
+            }
+        ];
+
+        testObjects.forEach(({ name, color, position, mass, friction, bounciness }) => {
+            // Create mesh
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshStandardMaterial({ color });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.position.set(position.x, position.y, position.z);
+            this.scene.add(mesh);
+
+            // Create corresponding physics body
+            const body = new RigidBody(mass, { x: 1, y: 1, z: 1 }, friction, bounciness);
+            body.position = { ...position };
+
+            this.physicsWorld.addObject(body);
+            this.cubes.push({ mesh, body });
+
+            console.log(`Added ${name} at (${position.x}, ${position.y}, ${position.z})`);
+        });
     }
 
     animate() {
