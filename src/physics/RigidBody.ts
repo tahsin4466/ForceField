@@ -5,14 +5,16 @@ export class RigidBody {
     mass: number;
     size: { x: number, y: number, z: number };
     friction: number;
+    bounciness: number;
 
-    constructor(mass = 1, size = { x: 1, y: 1, z: 1 }, friction  = 0.2) {
+    constructor(mass = 1, size = { x: 1, y: 1, z: 1 }, friction  = 0.2, bounciness = 0.0) {
         this.mass = mass;
         this.position = { x: 0, y: 0, z: 0 };
         this.velocity = { x: 0, y: 0, z: 0 };
         this.acceleration = { x: 0, y: 0, z: 0 };
         this.size = size;
         this.friction = friction;
+        this.bounciness = bounciness;
     }
 
     // Get bounding box (min and max coordinates)
