@@ -1,4 +1,4 @@
-import { SceneManager } from './three/Scene';
+import { TestWorld } from './three/TestWorld';
 
-const sceneManager = new SceneManager();
-(window as any).sceneManager = sceneManager;
+const testWorld = new TestWorld();
+(window as any).testWorld = testWorld;
