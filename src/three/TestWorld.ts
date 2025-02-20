@@ -113,7 +113,7 @@ export class TestWorld {
             this.scene.add(mesh);
 
             // Create corresponding physics body
-            const body = new RigidBody(mass, { x: 1, y: 1, z: 1 }, friction, bounciness);
+            const body = new RigidBody(mass, size, friction, bounciness);
             body.position = { ...position };
 
             this.physicsWorld.addObject(body);
