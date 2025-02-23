@@ -28,7 +28,7 @@ export class TestWorld {
 
         this.physicsWorld = new PhysicsWorld();
 
-        // ✅ Add forces
+        // Add forces
         this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
         this.physicsWorld.addForceGenerator(new FrictionForce(0.6, 0.4));
 
@@ -122,7 +122,7 @@ export class TestWorld {
             mesh.position.set(position.x, position.y, position.z);
             this.scene.add(mesh);
 
-            // ✅ Create physics body with static & kinetic friction
+            // Create physics body with static & kinetic friction
             const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness);
             body.position = { ...position };
 

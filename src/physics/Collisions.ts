@@ -65,7 +65,6 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
 
         // Check collisions at each substep
         if (objA.isColliding(objB)) {
-            console.log("Collision detected mid-impulse, stopping further motion.");
             break;
         }
     }
@@ -79,7 +78,6 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
  * Resolves collisions with the ground.
  */
 function resolveGroundCollision(obj: RigidBody) {
-    console.log(`Object hit the floor! Adjusting position.`);
     obj.position.y = obj.size.y / 2;
 
     if (Math.abs(obj.velocity.y) < 0.1) {

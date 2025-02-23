@@ -86,4 +86,3 @@ export class ExplosionForce extends ImpulseForce {
         super(position, forceMagnitude, radius, (d, r) => Math.exp(-d / r)); // Exponential decay for realism
     }
 }
-
