@@ -4,16 +4,18 @@ export class RigidBody {
     acceleration: { x: number, y: number, z: number };
     mass: number;
     size: { x: number, y: number, z: number };
-    friction: number;
+    staticFriction: number;  // ✅ Added Static Friction
+    kineticFriction: number; // ✅ Added Kinetic Friction
     bounciness: number;
 
-    constructor(mass = 1, size = { x: 0.5, y: 0.5, z: 0.5 }, friction = 0.2, bounciness = 0.0) {
+    constructor(mass = 1, size = { x: 0.5, y: 0.5, z: 0.5 }, staticFriction = 0.3, kineticFriction = 0.2, bounciness = 0.0) {
         this.mass = mass;
         this.position = { x: 0, y: 0, z: 0 };
         this.velocity = { x: 0, y: 0, z: 0 };
         this.acceleration = { x: 0, y: 0, z: 0 };
         this.size = size;
-        this.friction = friction;
+        this.staticFriction = staticFriction;
+        this.kineticFriction = kineticFriction;
         this.bounciness = bounciness;
     }
 
@@ -49,7 +51,6 @@ export class RigidBody {
         this.position.y += this.velocity.y * deltaTime;
         this.position.z += this.velocity.z * deltaTime;
 
-        // Reset acceleration
         this.acceleration = { x: 0, y: 0, z: 0 };
     }
 
