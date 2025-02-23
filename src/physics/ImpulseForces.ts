@@ -3,7 +3,7 @@ import { RigidBody } from "./RigidBody";
 
 export class ImpulseForce implements IExternalForceGenerator {
     private position: { x: number; y: number; z: number };
-    private forceMagnitude: number;
+    forceMagnitude: number;
     private radius: number;
     private decayFunction: (distance: number, radius: number) => number;
 

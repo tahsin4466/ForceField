@@ -18,7 +18,10 @@ export function handleCollisions(objects: RigidBody[], impulses: CollisionImpuls
     }
 }
 
-function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[]) {
+/**
+ * Resolves a collision between two objects and generates an impulse.
+ */
+function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[], steps: number = 4) {
     const overlapX = Math.min(objA.max.x - objB.min.x, objB.max.x - objA.min.x);
     const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
@@ -43,9 +46,34 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
         normal.z = 1;
     }
 
-    // ✅ Generate an impulse instead of applying force over time
-    impulses.push(new CollisionImpulse(objA, objB, normal));
+    // Instead of applying full impulse, break it into steps
+    const collisionImpulse = new CollisionImpulse(objA, objB, normal);
+    const impulseStep = {
+        x: collisionImpulse.forceMagnitude * normal.x / steps,
+        y: collisionImpulse.forceMagnitude * normal.y / steps,
+        z: collisionImpulse.forceMagnitude * normal.z / steps,
+    };
+
+    for (let i = 0; i < steps; i++) {
+        objA.velocity.x += (impulseStep.x / objA.mass);
+        objA.velocity.y += (impulseStep.y / objA.mass);
+        objA.velocity.z += (impulseStep.z / objA.mass);
+
+        objB.velocity.x -= (impulseStep.x / objB.mass);
+        objB.velocity.y -= (impulseStep.y / objB.mass);
+        objB.velocity.z -= (impulseStep.z / objB.mass);
+
+        // Check collisions at each substep
+        if (objA.isColliding(objB)) {
+            console.log("Collision detected mid-impulse, stopping further motion.");
+            break;
+        }
+    }
+
+    // Store the impulse for debugging or logging
+    impulses.push(collisionImpulse);
 }
+
 
 /**
  * Resolves collisions with the ground.

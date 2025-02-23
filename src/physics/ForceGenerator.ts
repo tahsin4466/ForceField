@@ -5,7 +5,7 @@ export interface IForceGenerator {
 }
 
 export interface IExternalForceGenerator {
-    applyImpulse(body: RigidBody): void;
+    applyImpulse(body: RigidBody, objects?: RigidBody[], steps?: number): void;
 }
 
 
