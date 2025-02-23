@@ -1,28 +1,24 @@
-import { RigidBody } from './RigidBody';
-import { CollisionForce } from './ForceGenerator.ts';
+import { RigidBody } from "./RigidBody";
+import { CollisionImpulse } from "./ImpulseForces.ts"
 
-export function handleCollisions(objects: RigidBody[], collisionForces: CollisionForce[]) {
+export function handleCollisions(objects: RigidBody[], impulses: CollisionImpulse[]) {
     for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
+
+        // Handle ground collision separately
         if (obj.min.y < 0) {
-            console.log(`Object hit the floor! Adjusting position.`);
-            obj.position.y = obj.size.y / 2;
-            if (Math.abs(obj.velocity.y) < 0.1) {
-                obj.velocity.y = 0;
-            } else {
-                obj.velocity.y *= -obj.bounciness;
-            }
+            resolveGroundCollision(obj);
         }
+
         for (let j = i + 1; j < objects.length; j++) {
             if (objects[i].isColliding(objects[j])) {
-                resolveCollision(objects[i], objects[j], collisionForces);
+                resolveObjectCollision(objects[i], objects[j], impulses);
             }
         }
     }
 }
 
-// Resolves collisions and delegates forces to be applied in the next frame
-function resolveCollision(objA: RigidBody, objB: RigidBody, collisionForces: CollisionForce[]) {
+function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[]) {
     const overlapX = Math.min(objA.max.x - objB.min.x, objB.max.x - objA.min.x);
     const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
@@ -47,6 +43,20 @@ function resolveCollision(objA: RigidBody, objB: RigidBody, collisionForces: Col
         normal.z = 1;
     }
 
-    // Add collision force effect
-    collisionForces.push(new CollisionForce(objA, objB, normal));
+    // ✅ Generate an impulse instead of applying force over time
+    impulses.push(new CollisionImpulse(objA, objB, normal));
+}
+
+/**
+ * Resolves collisions with the ground.
+ */
+function resolveGroundCollision(obj: RigidBody) {
+    console.log(`Object hit the floor! Adjusting position.`);
+    obj.position.y = obj.size.y / 2;
+
+    if (Math.abs(obj.velocity.y) < 0.1) {
+        obj.velocity.y = 0;
+    } else {
+        obj.velocity.y *= -obj.bounciness;
+    }
 }

@@ -4,8 +4,8 @@ export class RigidBody {
     acceleration: { x: number, y: number, z: number };
     mass: number;
     size: { x: number, y: number, z: number };
-    staticFriction: number;  // ✅ Added Static Friction
-    kineticFriction: number; // ✅ Added Kinetic Friction
+    staticFriction: number;
+    kineticFriction: number;
     bounciness: number;
 
     constructor(mass = 1, size = { x: 0.5, y: 0.5, z: 0.5 }, staticFriction = 0.3, kineticFriction = 0.2, bounciness = 0.0) {

@@ -19,9 +19,6 @@ export class Bomb {
         scene.add(this.mesh);
     }
 
-    /**
-     * Detonates this bomb by triggering an explosion force.
-     */
     detonate(scene: THREE.Scene, onDetonate: (position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) => void) {
         // More realistic explosion values
         const explosionForce = this.big ? 4000 : 1250; // Larger explosions have more force

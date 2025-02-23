@@ -77,8 +77,8 @@ export class TestWorld {
                 position: { x: -2, y: 5, z: 0 },
                 mass: 10,
                 size: { x: 0.5, y: 0.5, z: 0.5 },
-                staticFriction: 0.6,  // ✅ Wood has high static friction
-                kineticFriction: 0.4, // ✅ Slippery when moving
+                staticFriction: 0.6,
+                kineticFriction: 0.4,
                 bounciness: 0.1
             },
             {
@@ -87,8 +87,8 @@ export class TestWorld {
                 position: { x: 0, y: 8, z: 0 },
                 mass: 0.6,
                 size: { x: 0.24, y: 0.24, z: 0.24 },
-                staticFriction: 0.2,  // ✅ Low friction
-                kineticFriction: 0.1, // ✅ Very slippery
+                staticFriction: 0.2,
+                kineticFriction: 0.1,
                 bounciness: 0.9
             },
             {
@@ -97,18 +97,18 @@ export class TestWorld {
                 position: { x: 4, y: 6, z: 0 },
                 mass: 0.2,
                 size: { x: 0.05, y: 0.05, z: 0.05 },
-                staticFriction: 0.05,  // ✅ Extremely low static friction
-                kineticFriction: 0.02, // ✅ Almost no friction when moving
+                staticFriction: 0.05,
+                kineticFriction: 0.02,
                 bounciness: 0.3
             },
             {
                 name: "Metal Block",
                 color: 0xaaaaaa,
                 position: { x: -2, y: 7, z: -2 },
-                mass: 100,
+                mass: 50,
                 size: { x: 1, y: 1, z: 1 },
-                staticFriction: 0.7,  // ✅ Very high static friction
-                kineticFriction: 0.5, // ✅ Heavy but slow-moving
+                staticFriction: 0.7,
+                kineticFriction: 0.5,
                 bounciness: 0.0
             }
         ];
@@ -141,12 +141,11 @@ export class TestWorld {
             bomb.detonate(this.scene, (position, forceMagnitude, radius) => {
                 console.log(`Triggering Explosion at (${position.x}, ${position.y}, ${position.z})`);
 
-                // ✅ Use the new `addExternalForce()`
                 this.physicsWorld.addExternalForce(new ExplosionForce(position, forceMagnitude, radius));
             });
         });
 
-        this.bombs = []; // ✅ Clear bomb list after detonation
+        this.bombs = [];
     }
 
     animate() {
