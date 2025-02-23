@@ -3,9 +3,8 @@ import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
-import { ExplosionForce } from '../physics/Forces';
-import { GravityForce } from '../physics/Forces';
-import { FrictionForce } from "../physics/Forces";
+import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
+import { ExplosionForce } from "../physics/ImpulseForces"
 
 export class TestWorld {
     scene: THREE.Scene;
@@ -30,8 +29,8 @@ export class TestWorld {
         this.physicsWorld = new PhysicsWorld();
 
         // ✅ Add forces
-        this.physicsWorld.addForceGenerator(new GravityForce());
-        this.physicsWorld.addForceGenerator(new FrictionForce());
+        this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
+        this.physicsWorld.addForceGenerator(new FrictionForce(0.6, 0.4));
 
         // Floor (Static)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);
@@ -106,7 +105,7 @@ export class TestWorld {
                 name: "Metal Block",
                 color: 0xaaaaaa,
                 position: { x: -2, y: 7, z: -2 },
-                mass: 50,
+                mass: 100,
                 size: { x: 1, y: 1, z: 1 },
                 staticFriction: 0.7,  // ✅ Very high static friction
                 kineticFriction: 0.5, // ✅ Heavy but slow-moving
@@ -114,7 +113,7 @@ export class TestWorld {
             }
         ];
 
-        testObjects.forEach(({ name, color, size, position, mass, staticFriction, kineticFriction, bounciness }) => {
+        testObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness }) => {
             // Create mesh
             const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
             const material = new THREE.MeshStandardMaterial({ color });
@@ -139,12 +138,15 @@ export class TestWorld {
 
     detonateBombs() {
         this.bombs.forEach(bomb => {
-            bomb.detonate(this.scene, (position, forceMagnitude, radius, color) => {
-                this.physicsWorld.addForceGenerator(new ExplosionForce(position, forceMagnitude, radius));
+            bomb.detonate(this.scene, (position, forceMagnitude, radius) => {
+                console.log(`Triggering Explosion at (${position.x}, ${position.y}, ${position.z})`);
+
+                // ✅ Use the new `addExternalForce()`
+                this.physicsWorld.addExternalForce(new ExplosionForce(position, forceMagnitude, radius));
             });
         });
 
-        this.bombs = [];
+        this.bombs = []; // ✅ Clear bomb list after detonation
     }
 
     animate() {

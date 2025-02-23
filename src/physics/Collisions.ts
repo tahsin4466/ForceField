@@ -1,5 +1,5 @@
 import { RigidBody } from './RigidBody';
-import { CollisionForce } from './Forces';
+import { CollisionForce } from './ForceGenerator.ts';
 
 export function handleCollisions(objects: RigidBody[], collisionForces: CollisionForce[]) {
     for (let i = 0; i < objects.length; i++) {

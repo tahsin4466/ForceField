@@ -8,11 +8,11 @@ export class Bomb {
     constructor(position: THREE.Vector3, big: boolean, scene: THREE.Scene) {
         this.big = big;
         this.position = position.clone();
-        const size = big ? 1 : 0.25;
+        const size = big ? 1.2 : 0.35; // Slightly larger for realism
 
-        // Create bomb mesh (black cube)
-        const bombGeometry = new THREE.BoxGeometry(size, size, size);
-        const bombMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+        // Create bomb mesh (black sphere)
+        const bombGeometry = new THREE.SphereGeometry(size / 2, 16, 16);
+        const bombMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
         this.mesh = new THREE.Mesh(bombGeometry, bombMaterial);
         this.mesh.castShadow = true;
         this.mesh.position.set(position.x, position.y, position.z);
@@ -23,9 +23,10 @@ export class Bomb {
      * Detonates this bomb by triggering an explosion force.
      */
     detonate(scene: THREE.Scene, onDetonate: (position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) => void) {
-        const explosionForce = this.big ? 5000 : 1000; // Newtons
-        const explosionRadius = this.big ? 20 : 5; // Meters
-        const explosionColor = this.big ? 0xffa500 : 0xff0000;
+        // More realistic explosion values
+        const explosionForce = this.big ? 4000 : 1250; // Larger explosions have more force
+        const explosionRadius = this.big ? 13 : 4; // Bigger bombs affect a wider area
+        const explosionColor = this.big ? 0xffa500 : 0xff4444; // More intense red-orange for large explosions
 
         // Delegate explosion logic to `TestWorld`
         onDetonate(this.position, explosionForce, explosionRadius, explosionColor);

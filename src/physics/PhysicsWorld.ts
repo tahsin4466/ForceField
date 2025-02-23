@@ -1,10 +1,11 @@
 import { RigidBody } from "./RigidBody";
 import { handleCollisions } from "./Collisions";
-import { IForceGenerator, CollisionForce } from "./Forces";
+import { IForceGenerator, IExternalForceGenerator, CollisionForce } from "./ForceGenerator.ts";
 
 export class PhysicsWorld {
     private objects: RigidBody[] = [];
     private forceGenerators: IForceGenerator[] = [];
+    private externalForces: IExternalForceGenerator[] = [];
     private collisionForces: CollisionForce[] = [];
 
     addObject(object: RigidBody) {
@@ -15,27 +16,39 @@ export class PhysicsWorld {
         this.forceGenerators.push(forceGenerator);
     }
 
+    addExternalForce(force: IExternalForceGenerator) {
+        this.externalForces.push(force);
+    }
+
     update(deltaTime: number) {
-        // Apply forces
+        // Apply continuous forces (gravity, friction, etc.)
         this.objects.forEach(obj => {
             this.forceGenerators.forEach(force => {
                 force.applyForce(obj, deltaTime);
             });
         });
 
-        // Resolve collisions and generate collision forces
-        handleCollisions(this.objects, this.collisionForces);
+        this.externalForces.forEach(force => {
+            this.objects.forEach(obj => {
+                force.applyImpulse(obj);
+            });
+        });
 
-        // Apply collision forces
+        this.externalForces = [];
+
+        // Resolve collisions
+        handleCollisions(this.objects, this.collisionForces);
         this.collisionForces.forEach(force => {
-            force.applyForce(force.getBodyA(), deltaTime);
-            force.applyForce(force.getBodyB(), deltaTime);
+            if (force instanceof CollisionForce) {
+                force.applyForce(force.getBodyA(), deltaTime);
+                force.applyForce(force.getBodyB(), deltaTime);
+            }
         });
 
         // Clear collision forces after application
         this.collisionForces = [];
 
-        // Update positions after force application
+        // Update object positions
         this.objects.forEach(obj => {
             obj.update(deltaTime);
         });
