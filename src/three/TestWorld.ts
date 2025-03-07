@@ -79,18 +79,8 @@ export class TestWorld {
             {
                 name: "Crate",
                 color: 0x8B4513,
-                position: { x: -2, y: 5, z: 0 },
-                mass: 10,
-                size: { x: 0.5, y: 0.5, z: 0.5 },
-                staticFriction: 0.6,
-                kineticFriction: 0.4,
-                bounciness: 0.1
-            },
-            {
-                name: "Crate",
-                color: 0x8B4513,
-                position: { x: -2, y: 7, z: 0 },
-                mass: 10,
+                position: { x: -2, y: 7, z: 2 },
+                mass: 2,
                 size: { x: 0.5, y: 0.5, z: 0.5 },
                 staticFriction: 0.6,
                 kineticFriction: 0.4,
@@ -99,7 +89,7 @@ export class TestWorld {
             {
                 name: "Bouncy Ball",
                 color: 0xff0000,
-                position: { x: 0, y: 8, z: 0 },
+                position: { x: 0, y: 8, z: 2 },
                 mass: 0.6,
                 size: { x: 0.24, y: 0.24, z: 0.24 },
                 staticFriction: 0.2,
@@ -109,7 +99,7 @@ export class TestWorld {
             {
                 name: "Ice Cube",
                 color: 0x00ffff,
-                position: { x: 4, y: 6, z: 0 },
+                position: { x: 4, y: 6, z: 2 },
                 mass: 0.2,
                 size: { x: 0.05, y: 0.05, z: 0.05 },
                 staticFriction: 0.05,
@@ -119,8 +109,8 @@ export class TestWorld {
             {
                 name: "Metal Block",
                 color: 0xaaaaaa,
-                position: { x: -2, y: 7, z: -2 },
-                mass: 50,
+                position: { x: -2, y: 7, z: 0 },
+                mass: 5,
                 size: { x: 1, y: 1, z: 1 },
                 staticFriction: 0.7,
                 kineticFriction: 0.5,
@@ -179,6 +169,11 @@ export class TestWorld {
 
         this.cubes.forEach(({ mesh, body }) => {
             mesh.position.set(body.position.x, body.position.y, body.position.z);
+            mesh.rotation.set(
+                THREE.MathUtils.degToRad(body.rotation.pitch),
+                THREE.MathUtils.degToRad(body.rotation.yaw),
+                THREE.MathUtils.degToRad(body.rotation.roll)
+            );
         });
 
         this.renderer.render(this.scene, this.camera);

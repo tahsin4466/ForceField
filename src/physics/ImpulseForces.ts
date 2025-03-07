@@ -38,15 +38,28 @@ export class ImpulseForce implements IExternalForceGenerator {
             // Impulse scales with falloff but applies even beyond radius
             const impulse = this.forceMagnitude * falloff * (1 / (body.mass + 1));
 
-            body.velocity.x += direction.x * impulse;
-            body.velocity.y += Math.max(direction.y * impulse, 5);
-            body.velocity.z += direction.z * impulse;
+            // Select a random impact point near the body (off-center)
+            const impactPoint = {
+                x: body.position.x + (Math.random() - 0.5) * body.size.x,
+                y: body.position.y + (Math.random() - 0.5) * body.size.y,
+                z: body.position.z + (Math.random() - 0.5) * body.size.z
+            };
+
+            // Compute force vector
+            const force = {
+                x: direction.x * impulse,
+                y: Math.max(direction.y * impulse, 5), // Ensure some upward motion
+                z: direction.z * impulse
+            };
+
+            // Apply force at impact point
+            body.applyForceAtPoint(force, impactPoint);
         }
     }
 }
 
 export class CollisionImpulse extends ImpulseForce {
-    constructor(objA: RigidBody, objB: RigidBody, normal: { x: number; y: number; z: number }) {
+    constructor(objA: RigidBody, objB: RigidBody, normal: { x: number; y: number; z: number }, contactPoint: { x: number; y: number; z: number }) {
         const relativeVelocity = {
             x: objB.velocity.x - objA.velocity.x,
             y: objB.velocity.y - objA.velocity.y,
@@ -69,7 +82,7 @@ export class CollisionImpulse extends ImpulseForce {
             z: normal.z * impulseMagnitude,
         };
 
-        super(objA.position, Math.abs(impulseMagnitude), 1, () => 1);
+        super(contactPoint, Math.abs(impulseMagnitude), 1, () => 1);
 
         const impulseFraction = 0.8;
         objA.velocity.x += (impulse.x / objA.mass) * impulseFraction;
@@ -78,6 +91,10 @@ export class CollisionImpulse extends ImpulseForce {
         objB.velocity.x -= (impulse.x / objB.mass) * impulseFraction;
         objB.velocity.y -= (impulse.y / objB.mass) * impulseFraction;
         objB.velocity.z -= (impulse.z / objB.mass) * impulseFraction;
+
+        // **Apply rotational effect based on impact point**
+        objA.applyForceAtPoint(impulse, contactPoint);
+        objB.applyForceAtPoint({ x: -impulse.x, y: -impulse.y, z: -impulse.z }, contactPoint);
     }
 }
 
