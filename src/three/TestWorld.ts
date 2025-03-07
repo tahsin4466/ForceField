@@ -201,9 +201,9 @@ export class TestWorld {
 
 
 
-    console.log("Ray Origin:", rayOrigin); // Log direction of the ray
-    console.log("Camera Position:", this.camera.position); // Log camera position
-    console.log("Camera Direction:", direction); // Log direction the camera is facing
+        console.log("Ray Origin:", rayOrigin); // Log direction of the ray
+        console.log("Camera Position:", this.camera.position); // Log camera position
+        console.log("Camera Direction:", direction); // Log direction the camera is facing
 
         const line = this.createRayVisualization(this.camera.position, direction);
         this.scene.add(line); // Add the ray visualization to the scene
