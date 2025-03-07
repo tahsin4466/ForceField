@@ -96,5 +96,30 @@ function resolveGroundCollision(obj: RigidBody) {
                 obj.velocity.y = 0;
             }
         }
+
+        // **NEW: Gradually snap the object flat if tilted**
+        graduallySnapRotation(obj);
     }
+}
+
+/**
+ * Slowly aligns the object's rotation to rest flat on the ground.
+ */
+function graduallySnapRotation(obj: RigidBody) {
+    const threshold = 2; // Degrees: If rotation is within this, stop adjusting
+    const snapSpeed = 0.1; // How fast it aligns per frame
+
+    if (Math.abs(obj.rotation.pitch) > threshold) {
+        obj.rotation.pitch *= (1 - snapSpeed); // Reduce angle gradually
+        obj.angularVelocity.x *= 0.9; // Dampen unwanted rotation
+    }
+
+    if (Math.abs(obj.rotation.roll) > threshold) {
+        obj.rotation.roll *= (1 - snapSpeed);
+        obj.angularVelocity.z *= 0.9;
+    }
+
+    // Ensure the angles don't overshoot zero (float inaccuracies)
+    if (Math.abs(obj.rotation.pitch) < 0.1) obj.rotation.pitch = 0;
+    if (Math.abs(obj.rotation.roll) < 0.1) obj.rotation.roll = 0;
 }

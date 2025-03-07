@@ -87,6 +87,16 @@ export class TestWorld {
                 bounciness: 0.1
             },
             {
+                name: "Crate",
+                color: 0x8B4513,
+                position: { x: -2, y: 9, z: 2 },
+                mass: 2,
+                size: { x: 0.5, y: 0.5, z: 0.5 },
+                staticFriction: 0.6,
+                kineticFriction: 0.4,
+                bounciness: 0.1
+            },
+            {
                 name: "Bouncy Ball",
                 color: 0xff0000,
                 position: { x: 0, y: 8, z: 2 },
