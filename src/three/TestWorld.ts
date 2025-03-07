@@ -180,18 +180,7 @@ export class TestWorld {
         this.renderer.render(this.scene, this.camera);
     }
 
-    // Create a helper function to visualize the ray in the scene
-    createRayVisualization(rayOrigin: THREE.Vector3, rayDirection: THREE.Vector3) {
-        const points = [];
-        points.push(rayOrigin);
-        points.push(rayOrigin.clone().add(rayDirection.multiplyScalar(100))); // Arbitrary length for the ray
 
-        const geometry = new BufferGeometry().setFromPoints(points);
-        const material = new LineBasicMaterial({ color: 0xff0000 });
-        const line = new Line(geometry, material);
-
-        return line;
-    }
     
     //functions for the raycaster
     highlightObject() {
@@ -204,13 +193,7 @@ export class TestWorld {
     console.log("Ray Origin:", rayOrigin); // Log direction of the ray// Log camera position
     console.log("Camera Direction:", direction); // Log direction the camera is facing
 
-        const line = this.createRayVisualization(rayOrigin, direction);
-        this.scene.add(line); // Add the ray visualization to the scene
 
-    // Remove the line after 1 second
-        setTimeout(() => {
-            this.scene.remove(line); // Remove the line after 1 second
-        }, 10);
 
 
         this.raycaster.set(rayOrigin, direction);
