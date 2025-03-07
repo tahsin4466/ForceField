@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { Line, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, Vector3 } from 'three';
+
 import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
@@ -15,6 +17,10 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
+
+    //ray cast for drag force
+    raycaster = new THREE.Raycaster();
+    highlightedObject: THREE.Mesh | null = null;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -65,6 +71,9 @@ export class TestWorld {
                 this.detonateBombs();
             }
         });
+
+
+        window.addEventListener('click', () => this.selectObject());
 
         this.animate();
     }
@@ -148,6 +157,9 @@ export class TestWorld {
         this.bombs = [];
     }
 
+
+    
+    
     animate() {
         requestAnimationFrame(() => this.animate());
         let deltaTime = this.clock.getDelta();
@@ -159,7 +171,85 @@ export class TestWorld {
         this.cubes.forEach(({ mesh, body }) => {
             mesh.position.set(body.position.x, body.position.y, body.position.z);
         });
+        
+        this.highlightObject(); // Check for object highlighting
+
+
+        
 
         this.renderer.render(this.scene, this.camera);
+    }
+
+    // Create a helper function to visualize the ray in the scene
+    createRayVisualization(rayOrigin: THREE.Vector3, rayDirection: THREE.Vector3) {
+        const points = [];
+        points.push(rayOrigin);
+        points.push(rayOrigin.clone().add(rayDirection.multiplyScalar(100))); // Arbitrary length for the ray
+
+        const geometry = new BufferGeometry().setFromPoints(points);
+        const material = new LineBasicMaterial({ color: 0xff0000 });
+        const line = new Line(geometry, material);
+
+        return line;
+    }
+    
+    //functions for the raycaster
+    highlightObject() {
+
+        const direction = this.camera.getWorldDirection(new THREE.Vector3());
+        const rayOrigin = this.camera.position.clone(); // Ensure the origin is the camera's position (in world space)
+
+
+
+    console.log("Ray Origin:", rayOrigin); // Log direction of the ray
+    console.log("Camera Position:", this.camera.position); // Log camera position
+    console.log("Camera Direction:", direction); // Log direction the camera is facing
+
+        const line = this.createRayVisualization(this.camera.position, direction);
+        this.scene.add(line); // Add the ray visualization to the scene
+
+    // Remove the line after 1 second
+        setTimeout(() => {
+            this.scene.remove(line); // Remove the line after 1 second
+        }, 10);
+
+
+        this.raycaster.set(rayOrigin, direction);
+        const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
+
+        console.log('Intersects:', intersects); // Log intersection results to debug
+
+
+        if (intersects.length > 0) {
+            const object = intersects[0].object as THREE.Mesh;
+            if (this.highlightedObject !== object) {
+                // Remove highlight from the old object
+                if (this.highlightedObject) {
+                    (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                    (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
+
+                }
+
+                // Highlight new object
+                this.highlightedObject = object;
+                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);
+                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 1; // Set intensity for highlighting
+
+            }
+        } else {
+            // Remove highlight if no object is hit
+            if (this.highlightedObject) {
+                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+                this.highlightedObject = null;
+            }
+        }
+    }
+
+    selectObject() {
+        if (this.highlightedObject) {
+            console.log("Selected object:", this.highlightedObject);
+            // Here we can store the object for future dragging implementation
+        }
     }
 }

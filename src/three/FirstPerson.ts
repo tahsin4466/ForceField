@@ -43,14 +43,14 @@ export class FirstPersonControls {
             document.body.requestPointerLock();
         });
 
-        document.addEventListener('pointerlockchange', () => {
-            const crosshair = document.getElementById('crosshair');
-            if (document.pointerLockElement === document.body) {
-                crosshair!.style.display = 'block'; // Show crosshair when locked
-            } else {
-                crosshair!.style.display = 'none'; // Hide when unlocked
-            }
-        });
+        //document.addEventListener('pointerlockchange', () => {
+           // const crosshair = document.getElementById('crosshair');
+           // if (document.pointerLockElement === document.body) {
+           //     crosshair!.style.display = 'block'; // Show crosshair when locked
+          //  } else {
+         //       crosshair!.style.display = 'none'; // Hide when unlocked
+        //    }
+       // });
     }
 
     getPosition(): THREE.Vector3 {
@@ -115,5 +115,8 @@ export class FirstPersonControls {
         // Apply velocity with damping
         this.velocity.lerp(this.direction.multiplyScalar(this.speed * deltaTime), this.damping);
         this.yawObject.position.add(this.velocity);
+
+        // **Important Fix**: Make sure the camera position is updated with yawObject position.
+        this.camera.position.copy(this.yawObject.position);
     }
 }
