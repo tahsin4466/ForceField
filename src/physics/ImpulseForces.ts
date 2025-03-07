@@ -54,7 +54,7 @@ export class CollisionImpulse extends ImpulseForce {
         };
 
         // Compute impulse magnitude using coefficient of restitution (bounciness)
-        const restitution = Math.max(objA.bounciness, objB.bounciness);
+        const restitution = Math.min(Math.max(objA.bounciness, objB.bounciness), 0.5);
         const impulseMagnitude =
             (-(1 + restitution) *
                 (relativeVelocity.x * normal.x +

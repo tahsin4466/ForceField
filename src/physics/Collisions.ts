@@ -30,28 +30,30 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
     let pushAmount = 0;
 
     if (overlapX < overlapY && overlapX < overlapZ) {
-        pushAmount = overlapX * 0.5;
-        objA.position.x += pushAmount;
-        objB.position.x -= pushAmount;
+        pushAmount = overlapX * 0.4; // Reduced push to 40% to prevent instability
         normal.x = 1;
     } else if (overlapY < overlapZ) {
-        pushAmount = overlapY * 0.5;
-        objA.position.y += pushAmount;
-        objB.position.y -= pushAmount;
+        pushAmount = overlapY * 0.4;
         normal.y = 1;
     } else {
-        pushAmount = overlapZ * 0.5;
-        objA.position.z += pushAmount;
-        objB.position.z -= pushAmount;
+        pushAmount = overlapZ * 0.4;
         normal.z = 1;
     }
 
-    // Instead of applying full impulse, break it into steps
+    objA.position.x += pushAmount * normal.x;
+    objA.position.y += pushAmount * normal.y;
+    objA.position.z += pushAmount * normal.z;
+
+    objB.position.x -= pushAmount * normal.x;
+    objB.position.y -= pushAmount * normal.y;
+    objB.position.z -= pushAmount * normal.z;
+
+    // Apply impulse in smaller increments
     const collisionImpulse = new CollisionImpulse(objA, objB, normal);
     const impulseStep = {
-        x: collisionImpulse.forceMagnitude * normal.x / steps,
-        y: collisionImpulse.forceMagnitude * normal.y / steps,
-        z: collisionImpulse.forceMagnitude * normal.z / steps,
+        x: (collisionImpulse.forceMagnitude * normal.x / steps) * 0.7, // Scale impulse down
+        y: (collisionImpulse.forceMagnitude * normal.y / steps) * 0.7,
+        z: (collisionImpulse.forceMagnitude * normal.z / steps) * 0.7,
     };
 
     for (let i = 0; i < steps; i++) {
@@ -63,13 +65,12 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
         objB.velocity.y -= (impulseStep.y / objB.mass);
         objB.velocity.z -= (impulseStep.z / objB.mass);
 
-        // Check collisions at each substep
-        if (objA.isColliding(objB)) {
+        // Early exit if separation is achieved
+        if (!objA.isColliding(objB)) {
             break;
         }
     }
 
-    // Store the impulse for debugging or logging
     impulses.push(collisionImpulse);
 }
 

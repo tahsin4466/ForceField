@@ -15,6 +15,7 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
+    paused: boolean = false; // NEW: Pause state
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -64,6 +65,10 @@ export class TestWorld {
             if (event.code === "KeyE") {
                 this.detonateBombs();
             }
+            if (event.code === "Space") {
+                this.paused = !this.paused; // NEW: Toggle pause
+                console.log(this.paused ? "Simulation Paused" : "Simulation Resumed");
+            }
         });
 
         this.animate();
@@ -82,6 +87,16 @@ export class TestWorld {
                 bounciness: 0.1
             },
             {
+                name: "Crate",
+                color: 0x8B4513,
+                position: { x: -2, y: 7, z: 0 },
+                mass: 10,
+                size: { x: 0.5, y: 0.5, z: 0.5 },
+                staticFriction: 0.6,
+                kineticFriction: 0.4,
+                bounciness: 0.1
+            },
+            {
                 name: "Bouncy Ball",
                 color: 0xff0000,
                 position: { x: 0, y: 8, z: 0 },
@@ -89,7 +104,7 @@ export class TestWorld {
                 size: { x: 0.24, y: 0.24, z: 0.24 },
                 staticFriction: 0.2,
                 kineticFriction: 0.1,
-                bounciness: 0.9
+                bounciness: 0.7
             },
             {
                 name: "Ice Cube",
@@ -150,6 +165,12 @@ export class TestWorld {
 
     animate() {
         requestAnimationFrame(() => this.animate());
+
+        if (this.paused) {
+            this.renderer.render(this.scene, this.camera);
+            return; // Skip updating physics and controls
+        }
+
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.016); // Limit to 16ms (~60 FPS)
 
