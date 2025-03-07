@@ -20,7 +20,7 @@ export class TestWorld {
 
     //ray cast for drag force
     raycaster = new THREE.Raycaster();
-    highlightedObject: THREE.Mesh | null = null;
+    highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -189,9 +189,9 @@ export class TestWorld {
         const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
 
 
-
-    console.log("Ray Origin:", rayOrigin); // Log direction of the ray// Log camera position
-    console.log("Camera Direction:", direction); // Log direction the camera is facing
+        //ray test code
+        //console.log("Ray Origin:", rayOrigin); // Log direction of the ray// Log camera position
+        //console.log("Camera Direction:", direction); // Log direction the camera is facing
 
 
 
@@ -199,30 +199,34 @@ export class TestWorld {
         this.raycaster.set(rayOrigin, direction);
         const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
 
-        console.log('Intersects:', intersects); // Log intersection results to debug
+        //intersect test
+        //console.log('Intersects:', intersects); // Log intersection results to debug
 
 
         if (intersects.length > 0) {
-            const object = intersects[0].object as THREE.Mesh;
-            if (this.highlightedObject !== object) {
+            //const object = intersects[0].object as THREE.Mesh;
+            const mesh = intersects[0].object as THREE.Mesh;
+            const cube = this.cubes.find(c => c.mesh === mesh); // Find the corresponding cube object
+
+            if (cube && this.highlightedObject !== cube) {
                 // Remove highlight from the old object
                 if (this.highlightedObject) {
-                    (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
-                    (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
+                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
 
                 }
 
                 // Highlight new object
-                this.highlightedObject = object;
-                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);
-                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 1; // Set intensity for highlighting
+                this.highlightedObject = cube;
+                (cube.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);
+                (cube.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 1;
 
             }
         } else {
             // Remove highlight if no object is hit
             if (this.highlightedObject) {
-                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
-                (this.highlightedObject.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+                (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
                 this.highlightedObject = null;
             }
         }
@@ -232,6 +236,8 @@ export class TestWorld {
         if (this.highlightedObject) {
             console.log("Selected object:", this.highlightedObject);
             // Here we can store the object for future dragging implementation
+            // Now you can access both mesh and body
+            console.log("Physics Body:", this.highlightedObject.body);
         }
     }
 }
