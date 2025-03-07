@@ -25,20 +25,18 @@ export class ImpulseForce implements IExternalForceGenerator {
         const dz = body.position.z - this.position.z;
         const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        // Ensure objects beyond the radius still feel a weak force
         const falloff = this.decayFunction(distance, this.radius);
 
-        if (falloff > 0.01) { // Threshold so very far objects get a negligible force but not exactly zero
+        if (falloff > 0.01) {
             const direction = {
                 x: dx / Math.max(distance, 0.01),
-                y: (dy + 1) / Math.max(distance, 0.01), // Ensure upward motion
+                y: dy / Math.max(distance, 0.01),
                 z: dz / Math.max(distance, 0.01),
             };
 
             // Impulse scales with falloff but applies even beyond radius
             const impulse = this.forceMagnitude * falloff * (1 / (body.mass + 1));
 
-            // Select a random impact point near the body (off-center)
             const impactPoint = {
                 x: body.position.x + (Math.random() - 0.5) * body.size.x,
                 y: body.position.y + (Math.random() - 0.5) * body.size.y,
@@ -48,7 +46,7 @@ export class ImpulseForce implements IExternalForceGenerator {
             // Compute force vector
             const force = {
                 x: direction.x * impulse,
-                y: Math.max(direction.y * impulse, 5), // Ensure some upward motion
+                y: direction.y * impulse,
                 z: direction.z * impulse
             };
 

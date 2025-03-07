@@ -5,7 +5,7 @@ export class FirstPersonControls {
     private scene: THREE.Scene;
     private velocity: THREE.Vector3 = new THREE.Vector3();
     private direction: THREE.Vector3 = new THREE.Vector3();
-    private speed: number = 1.4; // Walking speed in meters per second
+    private speed: number = 4; // Walking speed in meters per second
     private moveForward: boolean = false;
     private moveBackward: boolean = false;
     private moveLeft: boolean = false;
