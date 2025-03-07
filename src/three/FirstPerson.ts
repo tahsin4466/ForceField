@@ -12,26 +12,28 @@ export class FirstPersonControls {
     private moveRight: boolean = false;
     private moveUp: boolean = false;
     private moveDown: boolean = false;
-    private yawObject: THREE.Object3D = new THREE.Object3D();
-    private pitchObject: THREE.Object3D = new THREE.Object3D();
-    private sensitivity: number = 0.003; // Lower sensitivity for realistic movement
-    private damping: number = 0.15; // Smoother movement
+    private player: THREE.Group = new THREE.Group(); // The player's movement object
+    private sensitivity: number = 0.0025; // Standard FPS sensitivity
+    private damping: number = 0.15; // Smooth movement damping
+    private rotation: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ'); // Proper FPS rotation order
 
     constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
         this.camera = camera;
         this.scene = scene;
 
-        // Set a more human-like field of view (FOV)
-        this.camera.fov = 60;
+        // Set a standard field of view (FOV)
+        this.camera.fov = 75;
         this.camera.updateProjectionMatrix();
 
-        // Setup camera container hierarchy
-        this.pitchObject.add(this.camera);
-        this.yawObject.add(this.pitchObject);
-        this.scene.add(this.yawObject);
+        // Parent camera to the player object
+        this.player.add(this.camera);
+        this.scene.add(this.player);
 
-        // Set initial position to realistic eye height
-        this.yawObject.position.set(0, 1.7, 5); // 1.7m instead of 1.8m (closer to average height)
+        // Set initial position to eye level
+        this.player.position.set(0, 1.7, 5); // Standard FPS player height
+
+        // Offset camera inside player object to ensure correct eye level
+        this.camera.position.set(0, 0, 0); // Directly at the player's position
 
         // Event listeners
         window.addEventListener('keydown', (event) => this.onKeyDown(event), false);
@@ -43,18 +45,18 @@ export class FirstPersonControls {
             document.body.requestPointerLock();
         });
 
-        //document.addEventListener('pointerlockchange', () => {
-           // const crosshair = document.getElementById('crosshair');
-           // if (document.pointerLockElement === document.body) {
-           //     crosshair!.style.display = 'block'; // Show crosshair when locked
-          //  } else {
-         //       crosshair!.style.display = 'none'; // Hide when unlocked
-        //    }
-       // });
+        document.addEventListener('pointerlockchange', () => {
+            const crosshair = document.getElementById('crosshair');
+             if (document.pointerLockElement === document.body) {
+                 crosshair!.style.display = 'block'; // Show crosshair when locked
+              } else {
+                   crosshair!.style.display = 'none'; // Hide when unlocked
+                }
+             });
     }
 
     getPosition(): THREE.Vector3 {
-        return this.yawObject.position.clone(); // Get player's actual position
+        return this.player.position.clone(); // Get the player's actual position
     }
 
     private onKeyDown(event: KeyboardEvent) {
@@ -64,7 +66,7 @@ export class FirstPersonControls {
             case 'KeyA': this.moveLeft = true; break;
             case 'KeyD': this.moveRight = true; break;
             case 'ArrowUp': this.moveUp = true; break; // Jump/Fly up
-            case 'ArrowDown': this.moveDown = true; break; // Crouch/Descend
+            case 'ArrowDown': this.moveDown = true; break;
         }
     }
 
@@ -83,24 +85,28 @@ export class FirstPersonControls {
         const movementX = event.movementX || 0;
         const movementY = event.movementY || 0;
 
-        this.yawObject.rotation.y -= movementX * this.sensitivity;
-        this.pitchObject.rotation.x -= movementY * this.sensitivity;
+        // Update yaw (horizontal rotation)
+        this.rotation.y -= movementX * this.sensitivity;
 
-        // Limit pitch to prevent flipping upside down
-        this.pitchObject.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitchObject.rotation.x));
+        // Update pitch (vertical rotation) and clamp it
+        this.rotation.x -= movementY * this.sensitivity;
+        this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+
+        // Apply rotation to player using quaternions (better stability)
+        this.player.quaternion.setFromEuler(this.rotation);
     }
 
     update(deltaTime: number) {
         this.direction.set(0, 0, 0);
 
-        // Get forward and right vector from yawObject
-        const forward = new THREE.Vector3();
-        this.camera.getWorldDirection(forward);
-        forward.y = 0; // Keep movement horizontal
-        forward.normalize();
+        // Compute forward and right movement vectors based on player's rotation
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.player.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.quaternion);
 
-        const right = new THREE.Vector3();
-        right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        forward.y = 0; // Keep movement horizontal
+        right.y = 0;
+        forward.normalize();
+        right.normalize();
 
         // Apply movement
         if (this.moveForward) this.direction.add(forward);
@@ -112,11 +118,11 @@ export class FirstPersonControls {
 
         this.direction.normalize();
 
-        // Apply velocity with damping
+        // Apply velocity with damping for smooth movement
         this.velocity.lerp(this.direction.multiplyScalar(this.speed * deltaTime), this.damping);
-        this.yawObject.position.add(this.velocity);
+        this.player.position.add(this.velocity);
 
-        // **Important Fix**: Make sure the camera position is updated with yawObject position.
-        this.camera.position.copy(this.yawObject.position);
+        // Ensure the camera moves with the player naturally
+        this.camera.position.set(0, 0, 0);
     }
 }

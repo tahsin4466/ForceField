@@ -197,15 +197,14 @@ export class TestWorld {
     highlightObject() {
 
         const direction = this.camera.getWorldDirection(new THREE.Vector3());
-        const rayOrigin = this.camera.position.clone(); // Ensure the origin is the camera's position (in world space)
+        const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
 
 
 
-    console.log("Ray Origin:", rayOrigin); // Log direction of the ray
-    console.log("Camera Position:", this.camera.position); // Log camera position
+    console.log("Ray Origin:", rayOrigin); // Log direction of the ray// Log camera position
     console.log("Camera Direction:", direction); // Log direction the camera is facing
 
-        const line = this.createRayVisualization(this.camera.position, direction);
+        const line = this.createRayVisualization(rayOrigin, direction);
         this.scene.add(line); // Add the ray visualization to the scene
 
     // Remove the line after 1 second
