@@ -42,6 +42,15 @@ export class FirstPersonControls {
         document.addEventListener('click', () => {
             document.body.requestPointerLock();
         });
+
+        document.addEventListener('pointerlockchange', () => {
+            const crosshair = document.getElementById('crosshair');
+            if (document.pointerLockElement === document.body) {
+                crosshair!.style.display = 'block'; // Show crosshair when locked
+            } else {
+                crosshair!.style.display = 'none'; // Hide when unlocked
+            }
+        });
     }
 
     getPosition(): THREE.Vector3 {
