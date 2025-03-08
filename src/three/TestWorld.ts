@@ -31,7 +31,7 @@ export class TestWorld {
 
         // Add forces
         this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
-        this.physicsWorld.addForceGenerator(new FrictionForce(0.6, 0.4));
+        this.physicsWorld.addForceGenerator((new FrictionForce(0.6, 0.4)))
 
         // Floor (Static)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);

@@ -79,47 +79,16 @@ function resolveGroundCollision(obj: RigidBody) {
             obj.velocity.x = impulse.x;
             obj.velocity.y = impulse.y;
             obj.velocity.z = impulse.z;
-
-            const contactPoint = {
-                x: obj.position.x,
-                y: groundY,
-                z: obj.position.z
-            };
-
-            obj.applyForceAtPoint(impulse, contactPoint);
         } else {
-            // If resting on the ground with low movement, stop forces
-            if (Math.abs(obj.velocity.x) < 0.01 && Math.abs(obj.velocity.z) < 0.01) {
-                obj.velocity = { x: 0, y: 0, z: 0 };
-                obj.acceleration = { x: 0, y: 0, z: 0 };
-            } else {
-                obj.velocity.y = 0;
-            }
+            // If resting on the ground with low movement, stop forces completely
+            obj.velocity = { x: 0, y: 0, z: 0 };
+            obj.acceleration = { x: 0, y: 0, z: 0 };
         }
 
-        // **NEW: Gradually snap the object flat if tilted**
-        graduallySnapRotation(obj);
+        // **Ensure object does not rotate if it's on the ground**
+        obj.rotation.pitch = 0;
+        obj.rotation.roll = 0;
+        obj.angularVelocity = { x: 0, y: 0, z: 0 };
+        obj.torque = { x: 0, y: 0, z: 0 };
     }
-}
-
-/**
- * Slowly aligns the object's rotation to rest flat on the ground.
- */
-function graduallySnapRotation(obj: RigidBody) {
-    const threshold = 2; // Degrees: If rotation is within this, stop adjusting
-    const snapSpeed = 0.1; // How fast it aligns per frame
-
-    if (Math.abs(obj.rotation.pitch) > threshold) {
-        obj.rotation.pitch *= (1 - snapSpeed); // Reduce angle gradually
-        obj.angularVelocity.x *= 0.9; // Dampen unwanted rotation
-    }
-
-    if (Math.abs(obj.rotation.roll) > threshold) {
-        obj.rotation.roll *= (1 - snapSpeed);
-        obj.angularVelocity.z *= 0.9;
-    }
-
-    // Ensure the angles don't overshoot zero (float inaccuracies)
-    if (Math.abs(obj.rotation.pitch) < 0.1) obj.rotation.pitch = 0;
-    if (Math.abs(obj.rotation.roll) < 0.1) obj.rotation.roll = 0;
 }

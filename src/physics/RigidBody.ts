@@ -53,12 +53,6 @@ export class RigidBody {
         this.acceleration.z += force.z / this.mass;
     }
 
-    applyTorque(torque: { x: number, y: number, z: number }) {
-        this.torque.x += torque.x;
-        this.torque.y += torque.y;
-        this.torque.z += torque.z;
-    }
-
     applyForceAtPoint(force: { x: number, y: number, z: number }, point: { x: number, y: number, z: number }) {
         // Calculate lever arm (distance from center of mass)
         const r = {
@@ -118,6 +112,23 @@ export class RigidBody {
         this.rotation.yaw += this.angularVelocity.y * deltaTime * 57.2958;
         this.rotation.roll += this.angularVelocity.z * deltaTime * 57.2958;
 
+        // If the object is at rest, snap rotation to the nearest axis
+        const angularSpeed = Math.sqrt(
+            this.angularVelocity.x ** 2 +
+            this.angularVelocity.y ** 2 +
+            this.angularVelocity.z ** 2
+        );
+
+        if (angularSpeed < 0.01) { // Threshold to consider "at rest"
+            this.rotation.pitch = this.snapToNearestAxis(this.rotation.pitch);
+            this.rotation.roll = this.snapToNearestAxis(this.rotation.roll);
+
+            // Fully stop any residual angular velocity
+            this.angularVelocity = { x: 0, y: 0, z: 0 };
+            this.angularAcceleration = { x: 0, y: 0, z: 0 };
+            this.torque = { x: 0, y: 0, z: 0 };
+        }
+
         // Clear torque for next frame
         this.torque = { x: 0, y: 0, z: 0 };
     }
@@ -131,5 +142,9 @@ export class RigidBody {
             this.min.z < other.max.z &&
             this.max.z > other.min.z
         );
+    }
+
+    private snapToNearestAxis(angle: number): number {
+        return Math.round(angle / 90) * 90;
     }
 }
