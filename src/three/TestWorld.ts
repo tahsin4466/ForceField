@@ -16,6 +16,11 @@ export class TestWorld {
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
 
+
+    //ray cast for drag force
+    raycaster = new THREE.Raycaster();
+    highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
+
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -63,6 +68,19 @@ export class TestWorld {
             }
             if (event.code === "KeyE") {
                 this.detonateBombs();
+            }
+        });
+
+
+        window.addEventListener('click', (event) => {
+            if (event.button === 0) { // Left-click only
+                this.selectObject();
+            }
+        });
+
+        window.addEventListener("keydown", (event) => {
+            if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+                this.deselectObject();
             }
         });
 
@@ -148,6 +166,9 @@ export class TestWorld {
         this.bombs = [];
     }
 
+
+    
+    
     animate() {
         requestAnimationFrame(() => this.animate());
         let deltaTime = this.clock.getDelta();
@@ -159,7 +180,79 @@ export class TestWorld {
         this.cubes.forEach(({ mesh, body }) => {
             mesh.position.set(body.position.x, body.position.y, body.position.z);
         });
+        
+        this.highlightObject(); // Check for object highlighting
+
+
 
         this.renderer.render(this.scene, this.camera);
     }
+
+
+    
+    //functions for the raycaster
+    highlightObject() {
+
+        const direction = this.camera.getWorldDirection(new THREE.Vector3());
+        const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
+
+
+        //raycaster
+        this.raycaster.set(rayOrigin, direction);
+        const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
+
+
+        if (intersects.length > 0) {
+            //const object = intersects[0].object as THREE.Mesh;
+            const mesh = intersects[0].object as THREE.Mesh;
+            const cube = this.cubes.find(c => c.mesh === mesh); // Find the corresponding cube object
+
+            if (cube && this.highlightedObject !== cube) {
+                // Remove highlight from the old object
+                if (this.highlightedObject) {
+                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
+
+                }
+
+                // Highlight new object
+                this.highlightedObject = cube;
+                (cube.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);
+                (cube.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 1;
+
+            }
+        } else {
+            // Remove highlight if no object is hit
+            if (this.highlightedObject) {
+                (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+                (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+                this.highlightedObject = null;
+            }
+        }
+    }
+
+    selectObject() {
+        if (this.highlightedObject) {
+            console.log("Selected object:", this.highlightedObject);
+            // Here we can store the object for future dragging implementation
+            // Now you can access both mesh and body
+            console.log("Physics Body:", this.highlightedObject.body);
+
+
+        }
+    }
+
+
+    deselectObject() {
+        if (this.highlightedObject) {
+            console.log("Deselected object:", this.highlightedObject);
+    
+            // Reset material properties
+            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+    
+            this.highlightedObject = null;
+        }
+    }
+
 }
