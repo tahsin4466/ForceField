@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-//import { Line, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, Vector3 } from 'three';
-//for line draw
 import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
@@ -199,18 +197,9 @@ export class TestWorld {
         const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
 
 
-        //ray test code
-        //console.log("Ray Origin:", rayOrigin); // Log direction of the ray// Log camera position
-        //console.log("Camera Direction:", direction); // Log direction the camera is facing
-
-
-
-
+        //raycaster
         this.raycaster.set(rayOrigin, direction);
         const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
-
-        //intersect
-        //console.log('Intersects:', intersects); // Log intersection results to debug
 
 
         if (intersects.length > 0) {
