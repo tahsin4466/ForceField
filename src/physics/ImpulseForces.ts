@@ -37,21 +37,23 @@ export class ImpulseForce implements IExternalForceGenerator {
             // Impulse scales with falloff but applies even beyond radius
             const impulse = this.forceMagnitude * falloff * (1 / (body.mass + 1));
 
+            const force = {
+                x: direction.x * impulse,
+                y: direction.y * impulse,
+                z: direction.z * impulse
+            };
+
             // Check if object is resting on the ground
             const isOnGround = body.position.y-(body.size.y/2) <= 0.01 && body.rotation.pitch <= 0.1 && body.rotation.roll <= 0.1;
             console.log(body.position.y, body.rotation.pitch, body.rotation.roll);
             if (isOnGround) {
                 // Apply only linear motion (no torque/rotation)
-                const direction = {
-                    x: dx / Math.max(distance, 0.01),
-                    y: (dy + 1) / Math.max(distance, 0.01),
-                    z: dz / Math.max(distance, 0.01),
-                };
                 console.log("Applying linear motion!")
+                if (force.y < 0) {
+                    force.y = 0;
+                }
+                body.applyForce(force);
 
-                body.velocity.x += direction.x * impulse * 0.02;
-                body.velocity.y += Math.max(direction.y * impulse, 5) * 0.02;
-                body.velocity.z += direction.z * impulse * 0.02;
             } else {
                 console.log("Applying rotational motion!")
                 // Normal force application at impact point (includes torque)
@@ -59,12 +61,6 @@ export class ImpulseForce implements IExternalForceGenerator {
                     x: body.position.x + (Math.random() - 0.5) * body.size.x,
                     y: body.position.y + (Math.random() - 0.5) * body.size.y,
                     z: body.position.z + (Math.random() - 0.5) * body.size.z
-                };
-
-                const force = {
-                    x: direction.x * impulse,
-                    y: direction.y * impulse,
-                    z: direction.z * impulse
                 };
 
                 // Apply force at impact point (allows torque)
@@ -89,7 +85,7 @@ export class CollisionImpulse extends ImpulseForce {
                 (relativeVelocity.x * normal.x +
                     relativeVelocity.y * normal.y +
                     relativeVelocity.z * normal.z)) /
-            (1 / objA.mass + 1 / objB.mass);
+            (1 / objA.mass + 1 / objB.mass) * 0.1;
 
         // Compute impulse direction
         const impulse = {
