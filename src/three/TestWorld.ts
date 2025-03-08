@@ -17,6 +17,8 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
+    // Store the time variable to control pulsation
+    private pulseTime: number = 0;
 
     //ray cast for drag force
     raycaster = new THREE.Raycaster();
@@ -175,7 +177,12 @@ export class TestWorld {
         this.highlightObject(); // Check for object highlighting
 
 
-        
+        // Apply pulsating effect if an object is selected
+        if (this.highlightedObject) {
+            this.pulseTime += deltaTime * 4; // Speed up the effect
+            const pulseIntensity = 0.5 + 0.5 * Math.sin(this.pulseTime); // Oscillates between 0 and 1
+            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = pulseIntensity;
+        }
 
         this.renderer.render(this.scene, this.camera);
     }
@@ -199,7 +206,7 @@ export class TestWorld {
         this.raycaster.set(rayOrigin, direction);
         const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
 
-        //intersect test
+        //intersect
         //console.log('Intersects:', intersects); // Log intersection results to debug
 
 
@@ -238,6 +245,9 @@ export class TestWorld {
             // Here we can store the object for future dragging implementation
             // Now you can access both mesh and body
             console.log("Physics Body:", this.highlightedObject.body);
+
+            // Apply pulsating effect
+            this.pulseTime = 0; // Reset pulse effect timing
         }
     }
 }
