@@ -7,8 +7,6 @@ import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
 import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
 import { ExplosionForce } from "../physics/ImpulseForces"
-import { CursorImpulseForce } from '../physics/ImpulseForces';  // Import the CursorImpulseForce
-
 
 export class TestWorld {
     scene: THREE.Scene;
@@ -24,9 +22,6 @@ export class TestWorld {
     //ray cast for drag force
     raycaster = new THREE.Raycaster();
     highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
-
-    cursorImpulseForce: CursorImpulseForce;  // Use the CursorImpulseForce for pick-up/drop actions
-
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -66,18 +61,6 @@ export class TestWorld {
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
-
-
-        // Initialize the CursorImpulseForce generator for cursor interaction
-        this.cursorImpulseForce = new CursorImpulseForce(
-            { x: 0, y: 0, z: 0 },  // Default position (or the position where the force should apply)
-            10,  // Force magnitude for pick-up
-            5   // Radius for applying force (adjustable)
-        );
-
-        // Add the cursor impulse force to the physics world
-        this.physicsWorld.addExternalForce(this.cursorImpulseForce);
-
 
         window.addEventListener("keydown", (event) => {
             const playerPosition = this.controls.getPosition();
@@ -186,12 +169,6 @@ export class TestWorld {
     }
 
 
-    // Update cursor position
-    updateCursorPosition(position: { x: number, y: number, z: number }) {
-        this.cursorImpulseForce.updateCursorPosition(position);
-    }
-
-
     
     
     animate() {
@@ -272,13 +249,6 @@ export class TestWorld {
             // Now you can access both mesh and body
             console.log("Physics Body:", this.highlightedObject.body);
 
-            // Initiate pick-up (apply cursor-based impulse force)
-            this.cursorImpulseForce.setPickingUp(true);
-            console.log(this.cursorImpulseForce.isPickingUp)
-
-            // Update the impulse force with the current position (cursor's position)
-            this.cursorImpulseForce.position = this.highlightedObject.body.position;
-            console.log("Pick-up initiated for object:", this.highlightedObject);
 
         }
     }
@@ -288,11 +258,6 @@ export class TestWorld {
         if (this.highlightedObject) {
             console.log("Deselected object:", this.highlightedObject);
     
-            // Stop the pick-up action (simulate drop)
-            this.cursorImpulseForce.setPickingUp(false);
-            console.log(this.cursorImpulseForce.isPickingUp);
-
-
             // Reset material properties
             (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
             (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
