@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Line, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, Vector3 } from 'three';
-
+//import { Line, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, Vector3 } from 'three';
+//for line draw
 import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
@@ -17,8 +17,7 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
-    // Store the time variable to control pulsation
-    private pulseTime: number = 0;
+
 
     //ray cast for drag force
     raycaster = new THREE.Raycaster();
@@ -75,7 +74,17 @@ export class TestWorld {
         });
 
 
-        window.addEventListener('click', () => this.selectObject());
+        window.addEventListener('click', (event) => {
+            if (event.button === 0) { // Left-click only
+                this.selectObject();
+            }
+        });
+
+        window.addEventListener("keydown", (event) => {
+            if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+                this.deselectObject();
+            }
+        });
 
         this.animate();
     }
@@ -177,12 +186,6 @@ export class TestWorld {
         this.highlightObject(); // Check for object highlighting
 
 
-        // Apply pulsating effect if an object is selected
-        if (this.highlightedObject) {
-            this.pulseTime += deltaTime * 4; // Speed up the effect
-            const pulseIntensity = 0.5 + 0.5 * Math.sin(this.pulseTime); // Oscillates between 0 and 1
-            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = pulseIntensity;
-        }
 
         this.renderer.render(this.scene, this.camera);
     }
@@ -246,8 +249,21 @@ export class TestWorld {
             // Now you can access both mesh and body
             console.log("Physics Body:", this.highlightedObject.body);
 
-            // Apply pulsating effect
-            this.pulseTime = 0; // Reset pulse effect timing
+
         }
     }
+
+
+    deselectObject() {
+        if (this.highlightedObject) {
+            console.log("Deselected object:", this.highlightedObject);
+    
+            // Reset material properties
+            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+    
+            this.highlightedObject = null;
+        }
+    }
+
 }
