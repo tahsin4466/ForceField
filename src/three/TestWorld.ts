@@ -15,6 +15,7 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
+    paused: boolean = false; // NEW: Pause state
 
 
     //ray cast for drag force
@@ -35,7 +36,7 @@ export class TestWorld {
 
         // Add forces
         this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
-        this.physicsWorld.addForceGenerator(new FrictionForce(0.6, 0.4));
+        this.physicsWorld.addForceGenerator((new FrictionForce(0.6, 0.4)))
 
         // Floor (Static)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);
@@ -69,6 +70,10 @@ export class TestWorld {
             if (event.code === "KeyE") {
                 this.detonateBombs();
             }
+            if (event.code === "Space") {
+                this.paused = !this.paused; // NEW: Toggle pause
+                console.log(this.paused ? "Simulation Paused" : "Simulation Resumed");
+            }
         });
 
 
@@ -92,46 +97,51 @@ export class TestWorld {
             {
                 name: "Crate",
                 color: 0x8B4513,
-                position: { x: -2, y: 5, z: 0 },
-                mass: 10,
+                position: { x: -2, y: 9, z: 2 },
+                mass: 2,
                 size: { x: 0.5, y: 0.5, z: 0.5 },
                 staticFriction: 0.6,
                 kineticFriction: 0.4,
-                bounciness: 0.1
+                bounciness: 0.1,
+                inertia: {xx: 1, yy: 1, zz: 1}
             },
             {
                 name: "Bouncy Ball",
                 color: 0xff0000,
-                position: { x: 0, y: 8, z: 0 },
+                position: { x: 0, y: 8, z: 2 },
                 mass: 0.6,
                 size: { x: 0.24, y: 0.24, z: 0.24 },
                 staticFriction: 0.2,
                 kineticFriction: 0.1,
-                bounciness: 0.9
+                bounciness: 0.7,
+                inertia: {xx: 5, yy: 5, zz: 5}
             },
             {
                 name: "Ice Cube",
                 color: 0x00ffff,
-                position: { x: 4, y: 6, z: 0 },
+                position: { x: 4, y: 6, z: 2 },
                 mass: 0.2,
                 size: { x: 0.05, y: 0.05, z: 0.05 },
                 staticFriction: 0.05,
                 kineticFriction: 0.02,
-                bounciness: 0.3
+                bounciness: 0.3,
+                inertia: {xx: 0.5, yy: 0.5, zz: 0.5},
+
             },
             {
                 name: "Metal Block",
                 color: 0xaaaaaa,
-                position: { x: -2, y: 7, z: -2 },
-                mass: 50,
+                position: { x: -2, y: 7, z: 0 },
+                mass: 5,
                 size: { x: 1, y: 1, z: 1 },
                 staticFriction: 0.7,
                 kineticFriction: 0.5,
-                bounciness: 0.0
+                bounciness: 0.0,
+                inertia: {xx: 0.1, yy: 0.1, zz: 0.1}
             }
         ];
 
-        testObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness }) => {
+        testObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia }) => {
             // Create mesh
             const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
             const material = new THREE.MeshStandardMaterial({ color });
@@ -141,7 +151,7 @@ export class TestWorld {
             this.scene.add(mesh);
 
             // Create physics body with static & kinetic friction
-            const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness);
+            const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia);
             body.position = { ...position };
 
             this.physicsWorld.addObject(body);
@@ -171,14 +181,25 @@ export class TestWorld {
     
     animate() {
         requestAnimationFrame(() => this.animate());
+
+        if (this.paused) {
+            this.renderer.render(this.scene, this.camera);
+            return; // Skip updating physics and controls
+        }
+
         let deltaTime = this.clock.getDelta();
-        deltaTime = Math.min(deltaTime, 0.016); // Limit to 16ms (~60 FPS)
+        deltaTime = Math.min(deltaTime, 0.008); // Limit to 16ms (~60 FPS)
 
         this.controls.update(deltaTime);
         this.physicsWorld.update(deltaTime);
 
         this.cubes.forEach(({ mesh, body }) => {
             mesh.position.set(body.position.x, body.position.y, body.position.z);
+            mesh.rotation.set(
+                THREE.MathUtils.degToRad(body.rotation.pitch),
+                THREE.MathUtils.degToRad(body.rotation.yaw),
+                THREE.MathUtils.degToRad(body.rotation.roll)
+            );
         });
         
         this.highlightObject(); // Check for object highlighting

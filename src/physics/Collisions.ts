@@ -21,68 +21,74 @@ export function handleCollisions(objects: RigidBody[], impulses: CollisionImpuls
 /**
  * Resolves a collision between two objects and generates an impulse.
  */
-function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[], steps: number = 4) {
+function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[]) {
     const overlapX = Math.min(objA.max.x - objB.min.x, objB.max.x - objA.min.x);
     const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
 
     let normal = { x: 0, y: 0, z: 0 };
-    let pushAmount = 0;
+    let pushAmount;
 
+    // Determine the smallest overlap direction (collision normal)
     if (overlapX < overlapY && overlapX < overlapZ) {
-        pushAmount = overlapX * 0.5;
-        objA.position.x += pushAmount;
-        objB.position.x -= pushAmount;
-        normal.x = 1;
+        pushAmount = overlapX * 0.4;
+        normal.x = objA.position.x < objB.position.x ? -1 : 1;
     } else if (overlapY < overlapZ) {
-        pushAmount = overlapY * 0.5;
-        objA.position.y += pushAmount;
-        objB.position.y -= pushAmount;
-        normal.y = 1;
+        pushAmount = overlapY * 0.4;
+        normal.y = objA.position.y < objB.position.y ? -1 : 1;
     } else {
-        pushAmount = overlapZ * 0.5;
-        objA.position.z += pushAmount;
-        objB.position.z -= pushAmount;
-        normal.z = 1;
+        pushAmount = overlapZ * 0.4;
+        normal.z = objA.position.z < objB.position.z ? -1 : 1;
     }
 
-    // Instead of applying full impulse, break it into steps
-    const collisionImpulse = new CollisionImpulse(objA, objB, normal);
-    const impulseStep = {
-        x: collisionImpulse.forceMagnitude * normal.x / steps,
-        y: collisionImpulse.forceMagnitude * normal.y / steps,
-        z: collisionImpulse.forceMagnitude * normal.z / steps,
+    // Move objects slightly apart to prevent overlap
+    objA.position.x += pushAmount * normal.x;
+    objA.position.y += pushAmount * normal.y;
+    objA.position.z += pushAmount * normal.z;
+
+    objB.position.x -= pushAmount * normal.x;
+    objB.position.y -= pushAmount * normal.y;
+    objB.position.z -= pushAmount * normal.z;
+
+    // **NEW: Compute exact collision point**
+    const contactPoint = {
+        x: (objA.position.x + objB.position.x) / 2,
+        y: (objA.position.y + objB.position.y) / 2,
+        z: (objA.position.z + objB.position.z) / 2,
     };
 
-    for (let i = 0; i < steps; i++) {
-        objA.velocity.x += (impulseStep.x / objA.mass);
-        objA.velocity.y += (impulseStep.y / objA.mass);
-        objA.velocity.z += (impulseStep.z / objA.mass);
-
-        objB.velocity.x -= (impulseStep.x / objB.mass);
-        objB.velocity.y -= (impulseStep.y / objB.mass);
-        objB.velocity.z -= (impulseStep.z / objB.mass);
-
-        // Check collisions at each substep
-        if (objA.isColliding(objB)) {
-            break;
-        }
-    }
-
-    // Store the impulse for debugging or logging
+    // Apply impulse force at the contact point
+    const collisionImpulse = new CollisionImpulse(objA, objB, normal, contactPoint);
     impulses.push(collisionImpulse);
 }
 
-
-/**
- * Resolves collisions with the ground.
- */
 function resolveGroundCollision(obj: RigidBody) {
-    obj.position.y = obj.size.y / 2;
+    const groundY = obj.size.y / 2;
+    const nextY = obj.position.y + obj.velocity.y * 0.016;
 
-    if (Math.abs(obj.velocity.y) < 0.1) {
-        obj.velocity.y = 0;
-    } else {
-        obj.velocity.y *= -obj.bounciness;
+    if (nextY - obj.size.y / 2 < 0) {
+        obj.position.y = groundY;
+
+        if (Math.abs(obj.velocity.y) > 0.1) {
+            const impulse = {
+                x: obj.velocity.x * obj.bounciness,
+                y: -obj.velocity.y * obj.bounciness,
+                z: obj.velocity.z * obj.bounciness,
+            };
+
+            obj.velocity.x = impulse.x;
+            obj.velocity.y = impulse.y;
+            obj.velocity.z = impulse.z;
+        } else {
+            // If resting on the ground with low movement, stop forces completely
+            obj.velocity = {x: 0, y: 0, z: 0};
+            obj.acceleration = {x: 0, y: 0, z: 0};
+        }
+
+        // **Ensure object does not rotate if it's on the ground**
+        obj.rotation.pitch = 0;
+        obj.rotation.roll = 0;
+        obj.angularVelocity = {x: 0, y: 0, z: 0};
+        obj.torque = {x: 0, y: 0, z: 0};
     }
 }

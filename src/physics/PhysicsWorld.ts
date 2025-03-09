@@ -29,6 +29,7 @@ export class PhysicsWorld {
             });
         });
 
+        // Apply impulse forces
         this.externalForces.forEach(force => {
             this.objects.forEach(obj => {
                 force.applyImpulse(obj);
@@ -40,9 +41,10 @@ export class PhysicsWorld {
         handleCollisions(this.objects, this.collisionImpulses);
         this.collisionImpulses = [];
 
-        // Update object positions
+        // Update object positions and rotations
         this.objects.forEach(obj => {
             obj.update(deltaTime);
+            obj.updateRotation(deltaTime);
         });
     }
 }

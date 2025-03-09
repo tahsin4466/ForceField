@@ -7,7 +7,7 @@ export class GravityForce implements IForceGenerator {
         this.gravity = gravity;
     }
     applyForce(body: RigidBody) {
-        if (body.mass <= 0) return;
+        if (body.mass <= 0 || body.position.y <= body.size.y / 2) return;
         body.applyForce({ x: 0, y: this.gravity * body.mass, z: 0 });
     }
 }
