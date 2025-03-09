@@ -27,7 +27,7 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: Coll
     const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
 
     let normal = { x: 0, y: 0, z: 0 };
-    let pushAmount = 0;
+    let pushAmount;
 
     // Determine the smallest overlap direction (collision normal)
     if (overlapX < overlapY && overlapX < overlapZ) {
@@ -81,14 +81,14 @@ function resolveGroundCollision(obj: RigidBody) {
             obj.velocity.z = impulse.z;
         } else {
             // If resting on the ground with low movement, stop forces completely
-            obj.velocity = { x: 0, y: 0, z: 0 };
-            obj.acceleration = { x: 0, y: 0, z: 0 };
+            obj.velocity = {x: 0, y: 0, z: 0};
+            obj.acceleration = {x: 0, y: 0, z: 0};
         }
 
         // **Ensure object does not rotate if it's on the ground**
         obj.rotation.pitch = 0;
         obj.rotation.roll = 0;
-        obj.angularVelocity = { x: 0, y: 0, z: 0 };
-        obj.torque = { x: 0, y: 0, z: 0 };
+        obj.angularVelocity = {x: 0, y: 0, z: 0};
+        obj.torque = {x: 0, y: 0, z: 0};
     }
 }
