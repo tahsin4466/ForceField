@@ -78,17 +78,13 @@ export class TestWorld {
 
 
         window.addEventListener('click', (event) => {
-            if (event.button === 0) { // Left-click only
+            if (event.button === 0) {
                 this.selectObject();
             }
-        });
-
-        window.addEventListener("keydown", (event) => {
-            if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
-                this.deselectObject();
+            if (event.button === 2) {
+                this.deselectObject()
             }
         });
-
         this.animate();
     }
 
@@ -176,9 +172,6 @@ export class TestWorld {
         this.bombs = [];
     }
 
-
-    
-    
     animate() {
         requestAnimationFrame(() => this.animate());
 
@@ -188,7 +181,7 @@ export class TestWorld {
         }
 
         let deltaTime = this.clock.getDelta();
-        deltaTime = Math.min(deltaTime, 0.008); // Limit to 16ms (~60 FPS)
+        deltaTime = Math.min(deltaTime, 0.008); // Limit to 8ms (~120 FPS)
 
         this.controls.update(deltaTime);
         this.physicsWorld.update(deltaTime);
@@ -203,20 +196,14 @@ export class TestWorld {
         });
         
         this.highlightObject(); // Check for object highlighting
-
-
-
         this.renderer.render(this.scene, this.camera);
     }
 
-
-    
     //functions for the raycaster
     highlightObject() {
 
         const direction = this.camera.getWorldDirection(new THREE.Vector3());
         const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
-
 
         //raycaster
         this.raycaster.set(rayOrigin, direction);
@@ -235,7 +222,6 @@ export class TestWorld {
                     (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
 
                 }
-
                 // Highlight new object
                 this.highlightedObject = cube;
                 (cube.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);

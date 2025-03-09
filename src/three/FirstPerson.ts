@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gsap } from "gsap";
 
 export class FirstPersonControls {
     private camera: THREE.PerspectiveCamera;
@@ -12,6 +13,7 @@ export class FirstPersonControls {
     private moveRight: boolean = false;
     private moveUp: boolean = false;
     private moveDown: boolean = false;
+    private zoomIn: boolean = false;
     private player: THREE.Group = new THREE.Group(); // The player's movement object
     private sensitivity: number = 0.0025; // Standard FPS sensitivity
     private damping: number = 0.15; // Smooth movement damping
@@ -67,6 +69,7 @@ export class FirstPersonControls {
             case 'KeyD': this.moveRight = true; break;
             case 'ArrowUp': this.moveUp = true; break; // Jump/Fly up
             case 'ArrowDown': this.moveDown = true; break;
+            case 'KeyZ': this.zoomIn = true; break;
         }
     }
 
@@ -78,6 +81,7 @@ export class FirstPersonControls {
             case 'KeyD': this.moveRight = false; break;
             case 'ArrowUp': this.moveUp = false; break;
             case 'ArrowDown': this.moveDown = false; break;
+            case 'KeyZ': this.zoomIn = false; break;
         }
     }
 
@@ -115,6 +119,20 @@ export class FirstPersonControls {
         if (this.moveRight) this.direction.add(right);
         if (this.moveUp) this.direction.y += 1;
         if (this.moveDown) this.direction.y -= 1;
+        if (this.zoomIn) {
+            gsap.to(this.camera, {
+                fov: 30,
+                duration: 0.1,
+                onUpdate: () => this.camera.updateProjectionMatrix()
+            });
+        }
+        else {
+            gsap.to(this.camera, {
+                fov: 75,
+                duration: 0.1,
+                onUpdate: () => this.camera.updateProjectionMatrix()
+            });
+        }
 
         this.direction.normalize();
 
