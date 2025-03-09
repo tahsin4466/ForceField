@@ -15,10 +15,7 @@ export class TestWorld {
     physicsWorld: PhysicsWorld;
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
-    paused: boolean = false; // NEW: Pause state
-
-
-    //ray cast for drag force
+    paused: boolean = false;
     raycaster = new THREE.Raycaster();
     highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
 
@@ -62,6 +59,9 @@ export class TestWorld {
         this.clock = new THREE.Clock();
 
         window.addEventListener("keydown", (event) => {
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) {
+                event.preventDefault();
+            }
             const playerPosition = this.controls.getPosition();
             if (event.code === "KeyB") {
                 const isBig = event.shiftKey;
@@ -70,9 +70,15 @@ export class TestWorld {
             if (event.code === "KeyE") {
                 this.detonateBombs();
             }
+            const overlay = document.getElementById("pauseOverlay");
+
             if (event.code === "Space") {
-                this.paused = !this.paused; // NEW: Toggle pause
-                console.log(this.paused ? "Simulation Paused" : "Simulation Resumed");
+                this.paused = !this.paused;
+                document.body.classList.toggle("paused");
+                const isPaused = document.body.classList.contains("paused");
+
+                // Toggle Pause Overlay
+                overlay.style.display = isPaused ? "block" : "none";
             }
         });
 
@@ -175,27 +181,22 @@ export class TestWorld {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        if (this.paused) {
-            this.renderer.render(this.scene, this.camera);
-            return; // Skip updating physics and controls
-        }
-
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.008); // Limit to 8ms (~120 FPS)
 
-        this.controls.update(deltaTime);
-        this.physicsWorld.update(deltaTime);
-
-        this.cubes.forEach(({ mesh, body }) => {
-            mesh.position.set(body.position.x, body.position.y, body.position.z);
-            mesh.rotation.set(
-                THREE.MathUtils.degToRad(body.rotation.pitch),
-                THREE.MathUtils.degToRad(body.rotation.yaw),
-                THREE.MathUtils.degToRad(body.rotation.roll)
-            );
-        });
-        
-        this.highlightObject(); // Check for object highlighting
+        if (!this.paused) {
+            this.physicsWorld.update(deltaTime);
+            this.cubes.forEach(({ mesh, body }) => {
+                mesh.position.set(body.position.x, body.position.y, body.position.z);
+                mesh.rotation.set(
+                    THREE.MathUtils.degToRad(body.rotation.pitch),
+                    THREE.MathUtils.degToRad(body.rotation.yaw),
+                    THREE.MathUtils.degToRad(body.rotation.roll)
+                );
+            });
+            this.highlightObject();
+        }
+        this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
     }
 

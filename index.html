@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Physics Sandbox</title>
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #pauseOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 10px solid red;
+      box-sizing: border-box;
+      pointer-events: none;
+      display: none;
+      z-index: 9999;
+    }
+
+
     #crosshair {
       position: fixed;
       top: 50%;
@@ -12,7 +34,8 @@
       width: 20px;
       height: 20px;
       pointer-events: none;
-      display: none;
+      transform: translate(-50%, -50%);
+      display: block;
     }
 
     #crosshair::before,
@@ -36,9 +59,39 @@
       top: 50%;
       transform: translateY(-50%);
     }
+
+    /* Pause icon when paused */
+    .paused #crosshair {
+      width: 24px;
+      height: 24px;
+      display: block;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .paused #crosshair::before,
+    .paused #crosshair::after {
+      content: "";
+      position: absolute;
+      width: 6px; /* Width of each pause bar */
+      height: 24px; /* Height of pause bars */
+      background-color: red;
+      box-shadow: none;
+    }
+
+    .paused #crosshair::before {
+      left: 3px; /* Move first bar slightly left */
+    }
+
+    .paused #crosshair::after {
+      right: 3px; /* Move second bar slightly right */
+    }
   </style>
 </head>
 <body>
+<div id="pauseOverlay"></div>
 <div id="crosshair"></div> <!-- Crosshair element -->
 
 <script type="module" src="/src/main.ts"></script>
