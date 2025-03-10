@@ -18,6 +18,7 @@ export class TestWorld {
     paused: boolean = false;
     raycaster = new THREE.Raycaster();
     highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
+    simulationSpeed: number = 1;
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -59,30 +60,53 @@ export class TestWorld {
         this.clock = new THREE.Clock();
 
         window.addEventListener("keydown", (event) => {
+            // Prevent default for movement keys
             if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) {
                 event.preventDefault();
             }
+
             const playerPosition = this.controls.getPosition();
-            if (event.code === "KeyB") {
-                const isBig = event.shiftKey;
-                this.placeBomb(playerPosition, isBig);
-            }
-            if (event.code === "KeyE") {
-                this.detonateBombs();
-            }
             const overlay = document.getElementById("pauseOverlay");
+            const speedIndicator = document.getElementById("speedIndicator");
 
-            if (event.code === "Space") {
-                this.paused = !this.paused;
-                document.body.classList.toggle("paused");
-                const isPaused = document.body.classList.contains("paused");
-
-                // Toggle Pause Overlay
-                overlay.style.display = isPaused ? "block" : "none";
+            switch (event.code) {
+                case "KeyB": {
+                    const isBig = event.shiftKey;
+                    this.placeBomb(playerPosition, isBig);
+                    break;
+                }
+                case "KeyE":
+                    this.detonateBombs();
+                    break;
+                case "Space":
+                case "Digit0":
+                    this.paused = !this.paused;
+                    document.body.classList.toggle("paused");
+                    const isPaused = document.body.classList.contains("paused");
+                    overlay.style.display = isPaused ? "block" : "none";
+                    break;
+                case "Digit1":
+                    this.simulationSpeed = 0.5;
+                    if (speedIndicator) {
+                        speedIndicator.innerText = "0.5x";
+                        speedIndicator.style.display = "block";
+                    }
+                    break;
+                case "Digit2":
+                    this.simulationSpeed = 1;
+                    if (speedIndicator) {
+                        speedIndicator.style.display = "none"; // Hide marker at normal speed
+                    }
+                    break;
+                case "Digit3":
+                    this.simulationSpeed = 2;
+                    if (speedIndicator) {
+                        speedIndicator.innerText = "2x";
+                        speedIndicator.style.display = "block";
+                    }
+                    break;
             }
         });
-
-
         window.addEventListener('click', (event) => {
             if (event.button === 0) {
                 this.selectObject();
@@ -182,10 +206,10 @@ export class TestWorld {
         requestAnimationFrame(() => this.animate());
 
         let deltaTime = this.clock.getDelta();
-        deltaTime = Math.min(deltaTime, 0.008); // Limit to 8ms (~120 FPS)
+        deltaTime = Math.min(deltaTime, 0.008);
 
         if (!this.paused) {
-            this.physicsWorld.update(deltaTime);
+            this.physicsWorld.update(deltaTime * this.simulationSpeed);
             this.cubes.forEach(({ mesh, body }) => {
                 mesh.position.set(body.position.x, body.position.y, body.position.z);
                 mesh.rotation.set(
@@ -194,8 +218,9 @@ export class TestWorld {
                     THREE.MathUtils.degToRad(body.rotation.roll)
                 );
             });
-            this.highlightObject();
         }
+
+        this.highlightObject();
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
     }
@@ -254,11 +279,11 @@ export class TestWorld {
     deselectObject() {
         if (this.highlightedObject) {
             console.log("Deselected object:", this.highlightedObject);
-    
+
             // Reset material properties
             (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
             (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
-    
+
             this.highlightedObject = null;
         }
     }
