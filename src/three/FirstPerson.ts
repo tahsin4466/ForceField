@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gsap } from "gsap";
 
 export class FirstPersonControls {
     private camera: THREE.PerspectiveCamera;
@@ -12,10 +13,12 @@ export class FirstPersonControls {
     private moveRight: boolean = false;
     private moveUp: boolean = false;
     private moveDown: boolean = false;
+    private zoomIn: boolean = false;
     private player: THREE.Group = new THREE.Group(); // The player's movement object
     private sensitivity: number = 0.0025; // Standard FPS sensitivity
     private damping: number = 0.15; // Smooth movement damping
     private rotation: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ'); // Proper FPS rotation order
+    public lockMovement: boolean = false;
 
     constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
         this.camera = camera;
@@ -47,12 +50,12 @@ export class FirstPersonControls {
 
         document.addEventListener('pointerlockchange', () => {
             const crosshair = document.getElementById('crosshair');
-             if (document.pointerLockElement === document.body) {
-                 crosshair!.style.display = 'block'; // Show crosshair when locked
-              } else {
-                   crosshair!.style.display = 'none'; // Hide when unlocked
-                }
-             });
+            if (document.pointerLockElement === document.body) {
+                crosshair!.style.display = 'block'; // Show crosshair when locked
+            } else {
+                crosshair!.style.display = 'none'; // Hide when unlocked
+            }
+        });
     }
 
     getPosition(): THREE.Vector3 {
@@ -60,6 +63,7 @@ export class FirstPersonControls {
     }
 
     private onKeyDown(event: KeyboardEvent) {
+        if (this.lockMovement) return;
         switch (event.code) {
             case 'KeyW': this.moveForward = true; break;
             case 'KeyS': this.moveBackward = true; break;
@@ -67,10 +71,13 @@ export class FirstPersonControls {
             case 'KeyD': this.moveRight = true; break;
             case 'ArrowUp': this.moveUp = true; break; // Jump/Fly up
             case 'ArrowDown': this.moveDown = true; break;
+            case 'KeyZ': this.zoomIn = true; break;
+            case "Backquote": this.speed = 10; break;
         }
     }
 
     private onKeyUp(event: KeyboardEvent) {
+        if (this.lockMovement) return;
         switch (event.code) {
             case 'KeyW': this.moveForward = false; break;
             case 'KeyS': this.moveBackward = false; break;
@@ -78,6 +85,8 @@ export class FirstPersonControls {
             case 'KeyD': this.moveRight = false; break;
             case 'ArrowUp': this.moveUp = false; break;
             case 'ArrowDown': this.moveDown = false; break;
+            case 'KeyZ': this.zoomIn = false; break;
+            case "Backquote": this.speed = 4; break;
         }
     }
 
@@ -115,6 +124,20 @@ export class FirstPersonControls {
         if (this.moveRight) this.direction.add(right);
         if (this.moveUp) this.direction.y += 1;
         if (this.moveDown) this.direction.y -= 1;
+        if (this.zoomIn) {
+            gsap.to(this.camera, {
+                fov: 30,
+                duration: 0.1,
+                onUpdate: () => this.camera.updateProjectionMatrix()
+            });
+        }
+        else {
+            gsap.to(this.camera, {
+                fov: 75,
+                duration: 0.1,
+                onUpdate: () => this.camera.updateProjectionMatrix()
+            });
+        }
 
         this.direction.normalize();
 
