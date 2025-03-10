@@ -35,49 +35,69 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
     const overlapY = Math.min(overlapY_A, overlapY_B);
     const overlapZ = Math.min(overlapZ_A, overlapZ_B);
 
+    // **Check if either object is immovable**
+    const objA_Immovable = objA.mass < 0;
+    const objB_Immovable = objB.mass < 0;
+
     // Find the axis with the least penetration depth (smallest overlap)
     if (overlapX < overlapY && overlapX < overlapZ) {
         const pushAmount = overlapX * 0.5;
         if (overlapX_A < overlapX_B) {
-            objA.position.x -= pushAmount;
-            objB.position.x += pushAmount;
+            if (!objA_Immovable) objA.position.x -= pushAmount;
+            if (!objB_Immovable) objB.position.x += pushAmount;
         } else {
-            objA.position.x += pushAmount;
-            objB.position.x -= pushAmount;
+            if (!objA_Immovable) objA.position.x += pushAmount;
+            if (!objB_Immovable) objB.position.x -= pushAmount;
+        }
+
+        // ✅ **Handle perfect reflection for immovable objects**
+        if (objA_Immovable) {
+            objB.velocity.x = -objB.velocity.x * objA.bounciness; // Reflect using objA's restitution
+        }
+        if (objB_Immovable) {
+            objA.velocity.x = -objA.velocity.x * objB.bounciness; // Reflect using objB's restitution
         }
     } else if (overlapY < overlapZ) {
         const pushAmount = overlapY * 0.5;
         if (overlapY_A < overlapY_B) {
-            objA.position.y -= pushAmount;
-            objB.position.y += pushAmount;
+            if (!objA_Immovable) objA.position.y -= pushAmount;
+            if (!objB_Immovable) objB.position.y += pushAmount;
         } else {
-            objA.position.y += pushAmount;
-            objB.position.y -= pushAmount;
+            if (!objA_Immovable) objA.position.y += pushAmount;
+            if (!objB_Immovable) objB.position.y -= pushAmount;
         }
 
-        // If objects are resting, stop them from floating
-        if (Math.abs(objA.velocity.y) < 0.5) objA.velocity.y = 0;
-        if (Math.abs(objB.velocity.y) < 0.5) objB.velocity.y = 0;
+        // **If objects are resting, stop them from floating**
+        if (!objA_Immovable && Math.abs(objA.velocity.y) < 0.5) objA.velocity.y = 0;
+        if (!objB_Immovable && Math.abs(objB.velocity.y) < 0.5) objB.velocity.y = 0;
 
-        // Apply separate bounciness per object
-        if (objA.bounciness > 0) {
-            objA.velocity.y = -objA.velocity.y * objA.bounciness;
+        // ✅ **Perfect reflection for immovable objects**
+        if (objA_Immovable) {
+            objB.velocity.y = -objB.velocity.y * objA.bounciness;
         }
-        if (objB.bounciness > 0) {
-            objB.velocity.y = -objB.velocity.y * objB.bounciness;
+        if (objB_Immovable) {
+            objA.velocity.y = -objA.velocity.y * objB.bounciness;
         }
     } else {
         const pushAmount = overlapZ * 0.5;
         if (overlapZ_A < overlapZ_B) {
-            objA.position.z -= pushAmount;
-            objB.position.z += pushAmount;
+            if (!objA_Immovable) objA.position.z -= pushAmount;
+            if (!objB_Immovable) objB.position.z += pushAmount;
         } else {
-            objA.position.z += pushAmount;
-            objB.position.z -= pushAmount;
+            if (!objA_Immovable) objA.position.z += pushAmount;
+            if (!objB_Immovable) objB.position.z -= pushAmount;
+        }
+
+        // ✅ **Perfect reflection for immovable objects**
+        if (objA_Immovable) {
+            objB.velocity.z = -objB.velocity.z * objA.bounciness;
+        }
+        if (objB_Immovable) {
+            objA.velocity.z = -objA.velocity.z * objB.bounciness;
         }
     }
 
-    // Apply friction after collision resolution
+    // **Apply friction after collision resolution**
     const combinedFriction = (objA.kineticFriction + objB.kineticFriction) / 2;
     applyFrictionDuringCollision(objA, combinedFriction);
     applyFrictionDuringCollision(objB, combinedFriction);

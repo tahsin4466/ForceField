@@ -22,7 +22,7 @@ export const worldObjects: WorldObject[] = [
         name: "Left Wall",
         color: 0xaaaaaa,
         position: { x: -10, y: 5, z: 0 },
-        mass: 0, // Static object
+        mass: -1, // Static object
         size: { x: 1, y: 10, z: 20 },
         staticFriction: 0.9,
         kineticFriction: 0.8,
@@ -33,7 +33,7 @@ export const worldObjects: WorldObject[] = [
         name: "Right Wall",
         color: 0xaaaaaa,
         position: { x: 10, y: 5, z: 0 },
-        mass: 0, // Static object
+        mass: -1, // Static object
         size: { x: 1, y: 10, z: 20 },
         staticFriction: 0.9,
         kineticFriction: 0.8,
@@ -44,7 +44,7 @@ export const worldObjects: WorldObject[] = [
         name: "Back Wall",
         color: 0xaaaaaa,
         position: { x: 0, y: 5, z: -10 },
-        mass: 0, // Static object
+        mass: -1, // Static object
         size: { x: 20, y: 10, z: 1 },
         staticFriction: 0.9,
         kineticFriction: 0.8,
@@ -57,7 +57,7 @@ export const worldObjects: WorldObject[] = [
         name: "Ramp",
         color: 0x8b4513,
         position: { x: -5, y: 1, z: 5 },
-        mass: 0, // Static
+        mass: -1, // Static
         size: { x: 3, y: 0.5, z: 6 },
         staticFriction: 0.5,
         kineticFriction: 0.3,
@@ -140,7 +140,7 @@ export const worldObjects: WorldObject[] = [
         name: "Seesaw Pivot",
         color: 0x8b0000,
         position: { x: 0, y: 0.5, z: -3 },
-        mass: 0, // Static
+        mass: -1, // Static
         size: { x: 0.5, y: 0.5, z: 0.5 },
         staticFriction: 0.9,
         kineticFriction: 0.8,
@@ -166,7 +166,7 @@ export const worldObjects: WorldObject[] = [
         name: "Ice Patch",
         color: 0x00ffff,
         position: { x: 0, y: 0.01, z: 5 },
-        mass: 0, // Static
+        mass: -1, // Static
         size: { x: 5, y: 0.1, z: 5 },
         staticFriction: 0.01, // Almost no friction
         kineticFriction: 0.01,
@@ -203,7 +203,7 @@ export const worldObjects: WorldObject[] = [
 export function addWorldObjects(
     scene: THREE.Scene,
     physicsWorld: PhysicsWorld,
-    cubes: { mesh: THREE.Mesh; body: RigidBody }[]
+    objects: { mesh: THREE.Mesh; body: RigidBody }[]
 ) {
     worldObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia }) => {
         // Create mesh
@@ -219,6 +219,6 @@ export function addWorldObjects(
         body.position = { ...position };
 
         physicsWorld.addObject(body);
-        cubes.push({ mesh, body });
+        objects.push({ mesh, body });
     });
 }

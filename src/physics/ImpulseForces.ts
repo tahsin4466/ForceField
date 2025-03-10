@@ -78,41 +78,26 @@ export class CursorForce implements IExternalForceGenerator {
     forceMagnitude: number;
     forceDirection: Vector3;
     body: RigidBody;
+    point: Vector3;
 
     constructor(
         forceMagnitude: number,
         forceDirection: Vector3,
         body: RigidBody,
+        point: Vector3,
     ) {
         this.forceMagnitude = forceMagnitude;
         this.forceDirection = forceDirection;
         this.body = body;
+        this.point = point;
     }
 
     applyImpulse() {
-        const force = {
-            x: this.forceDirection.x * Math.pow(2, this.forceMagnitude) * this.body.mass,
-            y: this.forceDirection.y * Math.pow(2, this.forceMagnitude) * this.body.mass,
-            z: this.forceDirection.z * Math.pow(2, this.forceMagnitude) * this.body.mass,
-        };
-        const isOnGround = this.body.position.y-(this.body.size.y/2) <= 0.01 && this.body.rotation.pitch <= 0.1 && this.body.rotation.roll <= 0.1 && this.forceDirection.y < 0.1;
-        if (isOnGround) {
-            // Apply only linear motion (no torque/rotation)
-            if (force.y < 0) {
-                force.y = 0;
-            }
-            this.body.applyForce(force);
-
-        } else {
-            // Normal force application at impact point (includes torque)
-            const impactPoint = {
-                x: this.body.position.x + (Math.random() - 0.5) * this.body.size.x,
-                y: this.body.position.y + (Math.random() - 0.5) * this.body.size.y,
-                z: this.body.position.z + (Math.random() - 0.5) * this.body.size.z
-            };
-
-            // Apply force at impact point (allows torque)
-            this.body.applyForceAtPoint(force, impactPoint);
-        }
+    const force = {
+        x: this.forceDirection.x * Math.pow(2, this.forceMagnitude) * this.body.mass,
+        y: this.forceDirection.y * Math.pow(2, this.forceMagnitude) * this.body.mass,
+        z: this.forceDirection.z * Math.pow(2, this.forceMagnitude) * this.body.mass,
+    };
+    this.body.applyForceAtPoint(force, this.point);
     }
 }
