@@ -68,46 +68,6 @@ export class ImpulseForce implements IExternalForceGenerator {
     }
 }
 
-export class CollisionImpulse extends ImpulseForce {
-    constructor(objA: RigidBody, objB: RigidBody, normal: { x: number; y: number; z: number }, contactPoint: { x: number; y: number; z: number }) {
-        const relativeVelocity = {
-            x: objB.velocity.x - objA.velocity.x,
-            y: objB.velocity.y - objA.velocity.y,
-            z: objB.velocity.z - objA.velocity.z,
-        };
-
-        // Compute impulse magnitude using coefficient of restitution (bounciness)
-        const restitution = Math.min(Math.max(objA.bounciness, objB.bounciness), 0.5);
-        const impulseMagnitude =
-            (-(1 + restitution) *
-                (relativeVelocity.x * normal.x +
-                    relativeVelocity.y * normal.y +
-                    relativeVelocity.z * normal.z)) /
-            (1 / objA.mass + 1 / objB.mass) * 0.1;
-
-        // Compute impulse direction
-        const impulse = {
-            x: normal.x * impulseMagnitude,
-            y: normal.y * impulseMagnitude,
-            z: normal.z * impulseMagnitude,
-        };
-
-        super(contactPoint, Math.abs(impulseMagnitude), 1, () => 1);
-
-        const impulseFraction = 0.8;
-        objA.velocity.x += (impulse.x / objA.mass) * impulseFraction;
-        objA.velocity.y += (impulse.y / objA.mass) * impulseFraction;
-        objA.velocity.z += (impulse.z / objA.mass) * impulseFraction;
-        objB.velocity.x -= (impulse.x / objB.mass) * impulseFraction;
-        objB.velocity.y -= (impulse.y / objB.mass) * impulseFraction;
-        objB.velocity.z -= (impulse.z / objB.mass) * impulseFraction;
-
-        // **Apply rotational effect based on impact point**
-        objA.applyForceAtPoint(impulse, contactPoint);
-        objB.applyForceAtPoint({ x: -impulse.x, y: -impulse.y, z: -impulse.z }, contactPoint);
-    }
-}
-
 export class ExplosionForce extends ImpulseForce {
     constructor(position: { x: number; y: number; z: number }, forceMagnitude: number, radius: number) {
         super(position, forceMagnitude, radius, (d, r) => Math.exp(-d / r)); // Exponential decay for realism

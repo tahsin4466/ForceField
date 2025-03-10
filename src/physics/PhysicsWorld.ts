@@ -1,13 +1,11 @@
 import { RigidBody } from "./RigidBody";
 import { handleCollisions } from "./Collisions";
 import { IForceGenerator, IExternalForceGenerator } from "./ForceGenerator.ts";
-import { CollisionImpulse } from "./ImpulseForces.ts";
 
 export class PhysicsWorld {
     private objects: RigidBody[] = [];
     private forceGenerators: IForceGenerator[] = [];
     private externalForces: IExternalForceGenerator[] = [];
-    private collisionImpulses: CollisionImpulse[] = [];
 
     addObject(object: RigidBody) {
         this.objects.push(object);
@@ -38,8 +36,7 @@ export class PhysicsWorld {
         this.externalForces = [];
 
         // Resolve collisions
-        handleCollisions(this.objects, this.collisionImpulses);
-        this.collisionImpulses = [];
+        handleCollisions(this.objects);
 
         // Update object positions and rotations
         this.objects.forEach(obj => {

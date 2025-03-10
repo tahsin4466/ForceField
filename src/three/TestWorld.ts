@@ -5,6 +5,7 @@ import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
 import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
+import { addWorldObjects } from "./Objects.ts";
 
 export class TestWorld {
     scene: THREE.Scene;
@@ -51,7 +52,7 @@ export class TestWorld {
         this.scene.add(floor);
         this.scene.background = new THREE.Color(0x87CEEB);
 
-        this.addTestObjects();
+        addWorldObjects(this.scene, this.physicsWorld, this.cubes);
 
         // Lighting
         const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -118,10 +119,16 @@ export class TestWorld {
                     if (this.forceArrow && this.forceMagnitude > 3) {
                         this.forceMagnitude -= 1;
                     }
+                    else if (this.pickupDistance > 2) {
+                        this.pickupDistance -= 1;
+                    }
                     break;
                 case "ArrowRight":
                     if (this.forceArrow && this.forceMagnitude < 13) {
                         this.forceMagnitude += 1;
+                    }
+                    else if (this.pickupDistance) {
+                        this.pickupDistance += 1;
                     }
                     break;
             }
@@ -135,73 +142,6 @@ export class TestWorld {
             }
         });
         this.animate();
-    }
-
-    addTestObjects() {
-        const testObjects = [
-            {
-                name: "Crate",
-                color: 0x8B4513,
-                position: { x: -2, y: 9, z: 2 },
-                mass: 2,
-                size: { x: 0.5, y: 0.5, z: 0.5 },
-                staticFriction: 0.6,
-                kineticFriction: 0.4,
-                bounciness: 0.1,
-                inertia: {xx: 1, yy: 1, zz: 1}
-            },
-            {
-                name: "Bouncy Ball",
-                color: 0xff0000,
-                position: { x: 0, y: 8, z: 2 },
-                mass: 0.6,
-                size: { x: 0.24, y: 0.24, z: 0.24 },
-                staticFriction: 0.2,
-                kineticFriction: 0.1,
-                bounciness: 0.7,
-                inertia: {xx: 5, yy: 5, zz: 5}
-            },
-            {
-                name: "Ice Cube",
-                color: 0x00ffff,
-                position: { x: 4, y: 6, z: 2 },
-                mass: 0.2,
-                size: { x: 0.05, y: 0.05, z: 0.05 },
-                staticFriction: 0.05,
-                kineticFriction: 0.02,
-                bounciness: 0.3,
-                inertia: {xx: 0.5, yy: 0.5, zz: 0.5},
-
-            },
-            {
-                name: "Metal Block",
-                color: 0xaaaaaa,
-                position: { x: -2, y: 7, z: 0 },
-                mass: 5,
-                size: { x: 1, y: 1, z: 1 },
-                staticFriction: 0.7,
-                kineticFriction: 0.5,
-                bounciness: 0.0,
-                inertia: {xx: 0.1, yy: 0.1, zz: 0.1}
-            }
-        ];
-
-        testObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia }) => {
-            // Create mesh
-            const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-            const material = new THREE.MeshStandardMaterial({ color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.castShadow = true;
-            mesh.position.set(position.x, position.y, position.z);
-            this.scene.add(mesh);
-
-            // Create physics body with static & kinetic friction
-            const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia);
-            body.position = { ...position };
-
-            this.physicsWorld.addObject(body);
-            this.cubes.push({ mesh, body });
-        });
     }
 
     placeBomb(position: THREE.Vector3, big: boolean) {
@@ -248,9 +188,7 @@ export class TestWorld {
             this.scene.add(this.forceArrow);
         }
         else if (this.pickupDistance && this.selectedObject) {
-            // Get the direction the camera is facing
-            const direction = this.camera.getWorldDirection(new THREE.Vector3());
-            // Compute the new target position (pickup distance in front of the player)
+            const direction = this.camera.getWorldDirection(new THREE.Vector3())
             const targetPosition = this.controls.getPosition().clone().addScaledVector(direction, this.pickupDistance);
             // Move the physics body to this new position
             this.selectedObject.body.position.x = targetPosition.x;
@@ -321,7 +259,6 @@ export class TestWorld {
             this.selectedObject = this.highlightedObject;
             this.selectedObject.body.clearForce();
             this.pickupDistance = this.controls.getPosition().distanceTo(this.selectedObject.mesh.position);
-            console.log(this.pickupDistance);
         }
     }
 

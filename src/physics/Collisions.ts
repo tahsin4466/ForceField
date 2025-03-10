@@ -1,10 +1,8 @@
 import { RigidBody } from "./RigidBody";
-import { CollisionImpulse } from "./ImpulseForces.ts"
 
-export function handleCollisions(objects: RigidBody[], impulses: CollisionImpulse[]) {
+export function handleCollisions(objects: RigidBody[]) {
     for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
-
         // Handle ground collision separately
         if (obj.min.y < 0) {
             resolveGroundCollision(obj);
@@ -12,54 +10,89 @@ export function handleCollisions(objects: RigidBody[], impulses: CollisionImpuls
 
         for (let j = i + 1; j < objects.length; j++) {
             if (objects[i].isColliding(objects[j])) {
-                resolveObjectCollision(objects[i], objects[j], impulses);
+                resolveObjectCollision(objects[i], objects[j]);
             }
         }
     }
 }
 
-/**
- * Resolves a collision between two objects and generates an impulse.
- */
-function resolveObjectCollision(objA: RigidBody, objB: RigidBody, impulses: CollisionImpulse[]) {
-    const overlapX = Math.min(objA.max.x - objB.min.x, objB.max.x - objA.min.x);
-    const overlapY = Math.min(objA.max.y - objB.min.y, objB.max.y - objA.min.y);
-    const overlapZ = Math.min(objA.max.z - objB.min.z, objB.max.z - objA.min.z);
+function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
+    // Compute overlap in both directions for each axis
+    const overlapX_A = objA.max.x - objB.min.x;
+    const overlapX_B = objB.max.x - objA.min.x;
+    const overlapY_A = objA.max.y - objB.min.y;
+    const overlapY_B = objB.max.y - objA.min.y;
+    const overlapZ_A = objA.max.z - objB.min.z;
+    const overlapZ_B = objB.max.z - objA.min.z;
 
-    let normal = { x: 0, y: 0, z: 0 };
-    let pushAmount;
-
-    // Determine the smallest overlap direction (collision normal)
-    if (overlapX < overlapY && overlapX < overlapZ) {
-        pushAmount = overlapX * 0.4;
-        normal.x = objA.position.x < objB.position.x ? -1 : 1;
-    } else if (overlapY < overlapZ) {
-        pushAmount = overlapY * 0.4;
-        normal.y = objA.position.y < objB.position.y ? -1 : 1;
-    } else {
-        pushAmount = overlapZ * 0.4;
-        normal.z = objA.position.z < objB.position.z ? -1 : 1;
+    // Ensure overlaps are positive (penetration depth)
+    if (overlapX_A <= 0 || overlapX_B <= 0 || overlapY_A <= 0 || overlapY_B <= 0 || overlapZ_A <= 0 || overlapZ_B <= 0) {
+        return; // No actual collision
     }
 
-    // Move objects slightly apart to prevent overlap
-    objA.position.x += pushAmount * normal.x;
-    objA.position.y += pushAmount * normal.y;
-    objA.position.z += pushAmount * normal.z;
+    // Get the smallest overlap in each axis
+    const overlapX = Math.min(overlapX_A, overlapX_B);
+    const overlapY = Math.min(overlapY_A, overlapY_B);
+    const overlapZ = Math.min(overlapZ_A, overlapZ_B);
 
-    objB.position.x -= pushAmount * normal.x;
-    objB.position.y -= pushAmount * normal.y;
-    objB.position.z -= pushAmount * normal.z;
+    // Find the axis with the least penetration depth (smallest overlap)
+    if (overlapX < overlapY && overlapX < overlapZ) {
+        const pushAmount = overlapX * 0.5;
+        if (overlapX_A < overlapX_B) {
+            objA.position.x -= pushAmount;
+            objB.position.x += pushAmount;
+        } else {
+            objA.position.x += pushAmount;
+            objB.position.x -= pushAmount;
+        }
+    } else if (overlapY < overlapZ) {
+        const pushAmount = overlapY * 0.5;
+        if (overlapY_A < overlapY_B) {
+            objA.position.y -= pushAmount;
+            objB.position.y += pushAmount;
+        } else {
+            objA.position.y += pushAmount;
+            objB.position.y -= pushAmount;
+        }
 
-    // **NEW: Compute exact collision point**
-    const contactPoint = {
-        x: (objA.position.x + objB.position.x) / 2,
-        y: (objA.position.y + objB.position.y) / 2,
-        z: (objA.position.z + objB.position.z) / 2,
-    };
+        // If objects are resting, stop them from floating
+        if (Math.abs(objA.velocity.y) < 0.5) objA.velocity.y = 0;
+        if (Math.abs(objB.velocity.y) < 0.5) objB.velocity.y = 0;
 
-    // Apply impulse force at the contact point
-    const collisionImpulse = new CollisionImpulse(objA, objB, normal, contactPoint);
-    impulses.push(collisionImpulse);
+        // Apply separate bounciness per object
+        if (objA.bounciness > 0) {
+            objA.velocity.y = -objA.velocity.y * objA.bounciness;
+        }
+        if (objB.bounciness > 0) {
+            objB.velocity.y = -objB.velocity.y * objB.bounciness;
+        }
+    } else {
+        const pushAmount = overlapZ * 0.5;
+        if (overlapZ_A < overlapZ_B) {
+            objA.position.z -= pushAmount;
+            objB.position.z += pushAmount;
+        } else {
+            objA.position.z += pushAmount;
+            objB.position.z -= pushAmount;
+        }
+    }
+
+    // Apply friction after collision resolution
+    const combinedFriction = (objA.kineticFriction + objB.kineticFriction) / 2;
+    applyFrictionDuringCollision(objA, combinedFriction);
+    applyFrictionDuringCollision(objB, combinedFriction);
+}
+
+export function applyFrictionDuringCollision(obj: RigidBody, friction: number) {
+    // Reduce velocity gradually based on friction coefficient
+    const frictionFactor = Math.max(0, 1 - friction * 0.05); // Lower values make friction weaker per frame
+
+    obj.velocity.x *= frictionFactor;
+    obj.velocity.z *= frictionFactor;
+
+    // If the object is moving very slowly, stop it completely
+    if (Math.abs(obj.velocity.x) < 0.01) obj.velocity.x = 0;
+    if (Math.abs(obj.velocity.z) < 0.01) obj.velocity.z = 0;
 }
 
 function resolveGroundCollision(obj: RigidBody) {
