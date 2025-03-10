@@ -21,6 +21,7 @@ export class TestWorld {
     private forceRaycaster = new THREE.Raycaster();
     highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
     selectedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
+    intersectionPoint = new THREE.Vector3();
     simulationSpeed: number = 1;
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
@@ -171,12 +172,7 @@ export class TestWorld {
 
         if (this.forceArrow && this.selectedObject) {
             const direction = this.camera.getWorldDirection(new THREE.Vector3());
-            const rayOrigin = new THREE.Vector3(
-                this.selectedObject.body.position.x,
-                this.selectedObject.body.position.y,
-                this.selectedObject.body.position.z
-            );
-            this.forceRaycaster.set(rayOrigin, direction);
+            this.forceRaycaster.set(this.intersectionPoint, direction);
             this.scene.remove(this.forceArrow);
             let arrowColor;
             if (this.forceMagnitude === 3) arrowColor = 0x0000ff;
@@ -184,7 +180,7 @@ export class TestWorld {
             else if (this.forceMagnitude > 6 && this.forceMagnitude <= 9) arrowColor = 0xffff00;
             else if (this.forceMagnitude > 9 && this.forceMagnitude <= 12) arrowColor = 0xffa500;
             else arrowColor = 0xff0000;
-            this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, arrowColor);
+            this.forceArrow = new THREE.ArrowHelper(direction, this.intersectionPoint, this.forceMagnitude, arrowColor);
             this.scene.add(this.forceArrow);
         }
         else if (this.pickupDistance && this.selectedObject) {
@@ -215,37 +211,31 @@ export class TestWorld {
         this.renderer.render(this.scene, this.camera);
     }
 
-    //functions for the raycaster
     highlightObject() {
-
         const direction = this.camera.getWorldDirection(new THREE.Vector3());
-        const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
+        const rayOrigin = this.controls.getPosition();
 
-        //raycaster
         this.selectionRaycaster.set(rayOrigin, direction);
         const intersects = this.selectionRaycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
 
-
         if (intersects.length > 0) {
-            //const object = intersects[0].object as THREE.Mesh;
             const mesh = intersects[0].object as THREE.Mesh;
-            const cube = this.cubes.find(c => c.mesh === mesh); // Find the corresponding cube object
+            const cube = this.cubes.find(c => c.mesh === mesh);
 
-            if (cube && this.highlightedObject !== cube ) {
-                // Remove highlight from the old object
+            if (cube && cube.body.mass >= 0 && this.highlightedObject !== cube) {
                 if (this.highlightedObject) {
                     (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
-                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0; // Reset intensity
-
+                    (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
                 }
-                // Highlight new object
+
+                // Store the intersection point for later use
+                this.intersectionPoint = intersects[0].point.clone(); // ⬅️ Store point
                 this.highlightedObject = cube;
+
                 (cube.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x333333);
                 (cube.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 1;
-
             }
         } else {
-            // Remove highlight if no object is hit
             if (this.highlightedObject) {
                 (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
                 (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
@@ -266,19 +256,15 @@ export class TestWorld {
         if (this.highlightedObject && !this.selectedObject) {
             this.selectedObject = this.highlightedObject;
             const direction = this.camera.getWorldDirection(new THREE.Vector3());
-            const rayOrigin = new THREE.Vector3(
-                this.selectedObject.body.position.x,
-                this.selectedObject.body.position.y,
-                this.selectedObject.body.position.z
-            );
-            this.forceRaycaster.set(rayOrigin, direction);
+            const intersectionPoint = this.intersectionPoint || this.selectedObject.body.position;
+            this.forceRaycaster.set(intersectionPoint, direction);
             this.forceMagnitude = 3;
             if (this.forceArrow) {
                 this.scene.remove(this.forceArrow);
             }
 
             // Create an arrow to visualize the ray
-            this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, 0xff0000);
+            this.forceArrow = new THREE.ArrowHelper(direction, intersectionPoint, this.forceMagnitude, 0xff0000);
             this.scene.add(this.forceArrow);
         }
     }
@@ -286,7 +272,7 @@ export class TestWorld {
     deselectObject() {
         if (this.highlightedObject && this.selectedObject) {
             if (this.forceArrow) {
-                this.physicsWorld.addExternalForce(new CursorForce(this.forceMagnitude, this.camera.getWorldDirection(new THREE.Vector3()), this.selectedObject.body));
+                this.physicsWorld.addExternalForce(new CursorForce(this.forceMagnitude, this.camera.getWorldDirection(new THREE.Vector3()), this.selectedObject.body, this.intersectionPoint));
                 this.scene.remove(this.forceArrow);
                 this.forceArrow = null;
             }
@@ -295,6 +281,7 @@ export class TestWorld {
             (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
             this.selectedObject = null;
             this.controls.lockMovement = false;
+            this.intersectionPoint = new THREE.Vector3();
         }
         else if (this.pickupDistance) {
             this.pickupDistance = 0;
