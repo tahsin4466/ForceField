@@ -281,6 +281,7 @@ export class TestWorld {
             (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
             this.selectedObject = null;
             this.controls.lockMovement = false;
+            this.intersectionPoint = new THREE.Vector3();
         }
         else if (this.pickupDistance) {
             this.pickupDistance = 0;
