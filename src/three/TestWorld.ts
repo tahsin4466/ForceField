@@ -16,9 +16,14 @@ export class TestWorld {
     cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
     paused: boolean = false;
-    raycaster = new THREE.Raycaster();
+    private selectionRaycaster = new THREE.Raycaster();
+    private forceRaycaster = new THREE.Raycaster();
     highlightedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
+    selectedObject: { mesh: THREE.Mesh; body: RigidBody } | null = null;
     simulationSpeed: number = 1;
+    private forceArrow: THREE.ArrowHelper | null = null;
+    forceMagnitude: number = 3;
+
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -105,14 +110,27 @@ export class TestWorld {
                         speedIndicator.style.display = "block";
                     }
                     break;
+                case "KeyX":
+                    this.deselectObject();
+                    break;
+                case "ArrowLeft":
+                    if (this.forceArrow && this.forceMagnitude > 1) {
+                        this.forceMagnitude -= 1;
+                    }
+                    break;
+                case "ArrowRight":
+                    if (this.forceArrow && this.forceMagnitude < 10) {
+                        this.forceMagnitude += 1;
+                    }
+                    break;
             }
         });
         window.addEventListener('click', (event) => {
             if (event.button === 0) {
-                this.selectObject();
+                this.selectObjectDrag();
             }
             if (event.button === 2) {
-                this.deselectObject()
+                this.selectObjectForce();
             }
         });
         this.animate();
@@ -220,7 +238,28 @@ export class TestWorld {
             });
         }
 
-        this.highlightObject();
+        if (!this.selectedObject) {
+            this.highlightObject();
+        }
+
+        if (this.forceArrow && this.selectedObject) {
+            const direction = this.camera.getWorldDirection(new THREE.Vector3());
+            const rayOrigin = new THREE.Vector3(
+                this.selectedObject.body.position.x,
+                this.selectedObject.body.position.y,
+                this.selectedObject.body.position.z
+            );
+            this.forceRaycaster.set(rayOrigin, direction);
+            this.scene.remove(this.forceArrow);
+            let arrowColor;
+            if (this.forceMagnitude === 1) arrowColor = 0x0000ff;
+            else if (this.forceMagnitude > 1 && this.forceMagnitude <= 3) arrowColor = 0x00ff00;
+            else if (this.forceMagnitude > 3 && this.forceMagnitude <= 6) arrowColor = 0xffff00;
+            else if (this.forceMagnitude > 6 && this.forceMagnitude <= 9) arrowColor = 0xffa500;
+            else arrowColor = 0xff0000;
+            this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, arrowColor);
+            this.scene.add(this.forceArrow);
+        }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
     }
@@ -232,8 +271,8 @@ export class TestWorld {
         const rayOrigin = this.controls.getPosition(); // Ensure the origin is the camera's position (in world space)
 
         //raycaster
-        this.raycaster.set(rayOrigin, direction);
-        const intersects = this.raycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
+        this.selectionRaycaster.set(rayOrigin, direction);
+        const intersects = this.selectionRaycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
 
 
         if (intersects.length > 0) {
@@ -241,7 +280,7 @@ export class TestWorld {
             const mesh = intersects[0].object as THREE.Mesh;
             const cube = this.cubes.find(c => c.mesh === mesh); // Find the corresponding cube object
 
-            if (cube && this.highlightedObject !== cube) {
+            if (cube && this.highlightedObject !== cube ) {
                 // Remove highlight from the old object
                 if (this.highlightedObject) {
                     (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
@@ -264,27 +303,47 @@ export class TestWorld {
         }
     }
 
-    selectObject() {
-        if (this.highlightedObject) {
-            console.log("Selected object:", this.highlightedObject);
-            // Here we can store the object for future dragging implementation
-            // Now you can access both mesh and body
+    selectObjectDrag() {
+        if (this.highlightedObject && !this.selectedObject) {
             console.log("Physics Body:", this.highlightedObject.body);
-
-
+            console.log("FOR DRAG");
+            this.selectedObject = this.highlightedObject;
         }
     }
 
+    selectObjectForce() {
+        if (this.highlightedObject && !this.selectedObject) {
+            this.selectedObject = this.highlightedObject;
+            const direction = this.camera.getWorldDirection(new THREE.Vector3());
+            const rayOrigin = new THREE.Vector3(
+                this.selectedObject.body.position.x,
+                this.selectedObject.body.position.y,
+                this.selectedObject.body.position.z
+            );
+            this.forceRaycaster.set(rayOrigin, direction);
+            this.forceMagnitude = 3;
+            if (this.forceArrow) {
+                this.scene.remove(this.forceArrow);
+            }
+
+            // Create an arrow to visualize the ray
+            this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, 0xff0000);
+            this.scene.add(this.forceArrow);
+        }
+    }
 
     deselectObject() {
-        if (this.highlightedObject) {
-            console.log("Deselected object:", this.highlightedObject);
-
+        if (this.highlightedObject && this.selectedObject) {
+            console.log("Deselected object:", this.selectedObject);
             // Reset material properties
-            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
-            (this.highlightedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
-
-            this.highlightedObject = null;
+            (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+            (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+            this.selectedObject = null;
+            this.controls.lockMovement = false;
+            if (this.forceArrow) {
+                this.scene.remove(this.forceArrow);
+                this.forceArrow = null;
+            }
         }
     }
 

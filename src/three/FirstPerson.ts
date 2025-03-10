@@ -18,6 +18,7 @@ export class FirstPersonControls {
     private sensitivity: number = 0.0025; // Standard FPS sensitivity
     private damping: number = 0.15; // Smooth movement damping
     private rotation: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ'); // Proper FPS rotation order
+    public lockMovement: boolean = false;
 
     constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
         this.camera = camera;
@@ -62,6 +63,7 @@ export class FirstPersonControls {
     }
 
     private onKeyDown(event: KeyboardEvent) {
+        if (this.lockMovement) return;
         switch (event.code) {
             case 'KeyW': this.moveForward = true; break;
             case 'KeyS': this.moveBackward = true; break;
@@ -74,6 +76,7 @@ export class FirstPersonControls {
     }
 
     private onKeyUp(event: KeyboardEvent) {
+        if (this.lockMovement) return;
         switch (event.code) {
             case 'KeyW': this.moveForward = false; break;
             case 'KeyS': this.moveBackward = false; break;
