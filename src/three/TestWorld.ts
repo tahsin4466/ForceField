@@ -23,6 +23,7 @@ export class TestWorld {
     simulationSpeed: number = 1;
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
+    pickupDistance: number = 0;
 
 
     constructor() {
@@ -88,7 +89,7 @@ export class TestWorld {
                     this.paused = !this.paused;
                     document.body.classList.toggle("paused");
                     const isPaused = document.body.classList.contains("paused");
-                    overlay.style.display = isPaused ? "block" : "none";
+                    if (overlay) overlay.style.display = isPaused ? "block" : "none";
                     break;
                 case "Digit1":
                     this.simulationSpeed = 0.5;
@@ -224,18 +225,6 @@ export class TestWorld {
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.008);
 
-        if (!this.paused) {
-            this.physicsWorld.update(deltaTime * this.simulationSpeed);
-            this.cubes.forEach(({ mesh, body }) => {
-                mesh.position.set(body.position.x, body.position.y, body.position.z);
-                mesh.rotation.set(
-                    THREE.MathUtils.degToRad(body.rotation.pitch),
-                    THREE.MathUtils.degToRad(body.rotation.yaw),
-                    THREE.MathUtils.degToRad(body.rotation.roll)
-                );
-            });
-        }
-
         if (!this.selectedObject) {
             this.highlightObject();
         }
@@ -257,6 +246,32 @@ export class TestWorld {
             else arrowColor = 0xff0000;
             this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, arrowColor);
             this.scene.add(this.forceArrow);
+        }
+        else if (this.pickupDistance && this.selectedObject) {
+            // Get the direction the camera is facing
+            const direction = this.camera.getWorldDirection(new THREE.Vector3());
+            // Compute the new target position (pickup distance in front of the player)
+            const targetPosition = this.controls.getPosition().clone().addScaledVector(direction, this.pickupDistance);
+            // Move the physics body to this new position
+            this.selectedObject.body.position.x = targetPosition.x;
+            this.selectedObject.body.position.y = targetPosition.y;
+            this.selectedObject.body.position.z = targetPosition.z;
+            // Ensure the mesh follows the physics body
+            this.selectedObject.mesh.position.copy(this.selectedObject.body.position);
+        }
+
+
+        if (!this.paused) {
+            this.physicsWorld.update(deltaTime * this.simulationSpeed);
+            this.cubes.forEach(({ mesh, body }) => {
+                if (this.pickupDistance && this.selectedObject) this.selectedObject.body.clearForce();
+                mesh.position.set(body.position.x, body.position.y, body.position.z);
+                mesh.rotation.set(
+                    THREE.MathUtils.degToRad(body.rotation.pitch),
+                    THREE.MathUtils.degToRad(body.rotation.yaw),
+                    THREE.MathUtils.degToRad(body.rotation.roll)
+                );
+            });
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
@@ -303,8 +318,10 @@ export class TestWorld {
 
     selectObjectDrag() {
         if (this.highlightedObject && !this.selectedObject) {
-            console.log("FOR DRAG");
             this.selectedObject = this.highlightedObject;
+            this.selectedObject.body.clearForce();
+            this.pickupDistance = this.controls.getPosition().distanceTo(this.selectedObject.mesh.position);
+            console.log(this.pickupDistance);
         }
     }
 
@@ -330,7 +347,6 @@ export class TestWorld {
     }
 
     deselectObject() {
-        console.log(this.selectedObject);
         if (this.highlightedObject && this.selectedObject) {
             if (this.forceArrow) {
                 this.physicsWorld.addExternalForce(new CursorForce(this.forceMagnitude, this.camera.getWorldDirection(new THREE.Vector3()), this.selectedObject.body));
@@ -342,6 +358,9 @@ export class TestWorld {
             (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
             this.selectedObject = null;
             this.controls.lockMovement = false;
+        }
+        else if (this.pickupDistance) {
+            this.pickupDistance = 0;
         }
     }
 }

@@ -89,6 +89,12 @@ export class RigidBody {
         this.acceleration = { x: 0, y: 0, z: 0 };
     }
 
+    clearForce() {
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+        this.velocity.z = 0;
+    }
+
     updateRotation(deltaTime: number) {
         const dampingFactor = 0.98; // Reduce rotation over time
 
@@ -119,7 +125,7 @@ export class RigidBody {
             this.angularVelocity.z ** 2
         );
 
-        if (angularSpeed < 0.01) { // Threshold to consider "at rest"
+        if (angularSpeed < 0.001) { // Threshold to consider "at rest"
             this.rotation.pitch = this.snapToNearestAxis(this.rotation.pitch);
             this.rotation.roll = this.snapToNearestAxis(this.rotation.roll);
 

@@ -72,6 +72,7 @@ export class FirstPersonControls {
             case 'ArrowUp': this.moveUp = true; break; // Jump/Fly up
             case 'ArrowDown': this.moveDown = true; break;
             case 'KeyZ': this.zoomIn = true; break;
+            case "Backquote": this.speed = 10; break;
         }
     }
 
@@ -85,6 +86,7 @@ export class FirstPersonControls {
             case 'ArrowUp': this.moveUp = false; break;
             case 'ArrowDown': this.moveDown = false; break;
             case 'KeyZ': this.zoomIn = false; break;
+            case "Backquote": this.speed = 4; break;
         }
     }
 
