@@ -4,7 +4,7 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
 import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
-import { ExplosionForce } from "../physics/ImpulseForces"
+import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 
 export class TestWorld {
     scene: THREE.Scene;
@@ -114,12 +114,12 @@ export class TestWorld {
                     this.deselectObject();
                     break;
                 case "ArrowLeft":
-                    if (this.forceArrow && this.forceMagnitude > 1) {
+                    if (this.forceArrow && this.forceMagnitude > 3) {
                         this.forceMagnitude -= 1;
                     }
                     break;
                 case "ArrowRight":
-                    if (this.forceArrow && this.forceMagnitude < 10) {
+                    if (this.forceArrow && this.forceMagnitude < 13) {
                         this.forceMagnitude += 1;
                     }
                     break;
@@ -211,8 +211,6 @@ export class TestWorld {
     detonateBombs() {
         this.bombs.forEach(bomb => {
             bomb.detonate(this.scene, (position, forceMagnitude, radius) => {
-                console.log(`Triggering Explosion at (${position.x}, ${position.y}, ${position.z})`);
-
                 this.physicsWorld.addExternalForce(new ExplosionForce(position, forceMagnitude, radius));
             });
         });
@@ -252,10 +250,10 @@ export class TestWorld {
             this.forceRaycaster.set(rayOrigin, direction);
             this.scene.remove(this.forceArrow);
             let arrowColor;
-            if (this.forceMagnitude === 1) arrowColor = 0x0000ff;
-            else if (this.forceMagnitude > 1 && this.forceMagnitude <= 3) arrowColor = 0x00ff00;
-            else if (this.forceMagnitude > 3 && this.forceMagnitude <= 6) arrowColor = 0xffff00;
-            else if (this.forceMagnitude > 6 && this.forceMagnitude <= 9) arrowColor = 0xffa500;
+            if (this.forceMagnitude === 3) arrowColor = 0x0000ff;
+            else if (this.forceMagnitude > 3 && this.forceMagnitude <= 6) arrowColor = 0x00ff00;
+            else if (this.forceMagnitude > 6 && this.forceMagnitude <= 9) arrowColor = 0xffff00;
+            else if (this.forceMagnitude > 9 && this.forceMagnitude <= 12) arrowColor = 0xffa500;
             else arrowColor = 0xff0000;
             this.forceArrow = new THREE.ArrowHelper(direction, rayOrigin, this.forceMagnitude, arrowColor);
             this.scene.add(this.forceArrow);
@@ -305,7 +303,6 @@ export class TestWorld {
 
     selectObjectDrag() {
         if (this.highlightedObject && !this.selectedObject) {
-            console.log("Physics Body:", this.highlightedObject.body);
             console.log("FOR DRAG");
             this.selectedObject = this.highlightedObject;
         }
@@ -333,18 +330,18 @@ export class TestWorld {
     }
 
     deselectObject() {
+        console.log(this.selectedObject);
         if (this.highlightedObject && this.selectedObject) {
-            console.log("Deselected object:", this.selectedObject);
+            if (this.forceArrow) {
+                this.physicsWorld.addExternalForce(new CursorForce(this.forceMagnitude, this.camera.getWorldDirection(new THREE.Vector3()), this.selectedObject.body));
+                this.scene.remove(this.forceArrow);
+                this.forceArrow = null;
+            }
             // Reset material properties
             (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
             (this.selectedObject.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
             this.selectedObject = null;
             this.controls.lockMovement = false;
-            if (this.forceArrow) {
-                this.scene.remove(this.forceArrow);
-                this.forceArrow = null;
-            }
         }
     }
-
 }

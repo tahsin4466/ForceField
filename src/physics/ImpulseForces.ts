@@ -1,5 +1,6 @@
 import { IExternalForceGenerator } from "./ForceGenerator.ts";
 import { RigidBody } from "./RigidBody";
+import { Vector3 } from "three"
 
 export class ImpulseForce implements IExternalForceGenerator {
     private position: { x: number; y: number; z: number };
@@ -113,5 +114,35 @@ export class CollisionImpulse extends ImpulseForce {
 export class ExplosionForce extends ImpulseForce {
     constructor(position: { x: number; y: number; z: number }, forceMagnitude: number, radius: number) {
         super(position, forceMagnitude, radius, (d, r) => Math.exp(-d / r)); // Exponential decay for realism
+    }
+}
+
+export class CursorForce implements IExternalForceGenerator {
+    forceMagnitude: number;
+    forceDirection: Vector3;
+    body: RigidBody;
+
+    constructor(
+        forceMagnitude: number,
+        forceDirection: Vector3,
+        body: RigidBody,
+    ) {
+        this.forceMagnitude = forceMagnitude;
+        this.forceDirection = forceDirection;
+        this.body = body;
+    }
+
+    applyImpulse() {
+        const force = {
+            x: this.forceDirection.x * Math.pow(2, this.forceMagnitude) * this.body.mass,
+            y: this.forceDirection.y * Math.pow(2, this.forceMagnitude) * this.body.mass,
+            z: this.forceDirection.z * Math.pow(2, this.forceMagnitude) * this.body.mass,
+        };
+        const impactPoint = {
+            x: this.body.position.x + (Math.random() - 0.5) * this.body.size.x,
+            y: this.body.position.y + (Math.random() - 0.5) * this.body.size.y,
+            z: this.body.position.z + (Math.random() - 0.5) * this.body.size.z
+        };
+        this.body.applyForceAtPoint(force, impactPoint);
     }
 }
