@@ -26,6 +26,14 @@ export class TestWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
+    //sun & lighting
+    sun: THREE.Mesh | null = null;
+    sunlight: THREE.DirectionalLight | null = null;
+    ambientLight: THREE.AmbientLight | null = null;
+    //day/night cycle
+    pausedTime: number = 0;  // Total time spent paused
+    pauseStart: number | null = null; // Time when pause started
+
 
 
     constructor() {
@@ -58,30 +66,28 @@ export class TestWorld {
         //the sun and lighting
         // Create the sun (a sphere)
         const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, 
-            //emissive: 0xFFFF00
-        });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        sun.position.set(20, 30, -10); // Position it in the sky
-        this.scene.add(sun);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+        this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        this.sun.position.set(20, 30, -10); // Position it in the sky
+        this.scene.add(this.sun);
 
         // Sunlight as a DirectionalLight
-        const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
-        sunlight.position.set(20, 30, -10);
-        sunlight.castShadow = true;
-        sunlight.shadow.mapSize.width = 2048;
-        sunlight.shadow.mapSize.height = 2048;
-        sunlight.shadow.camera.near = 1;
-        sunlight.shadow.camera.far = 100;
-        sunlight.shadow.camera.left = -50;
-        sunlight.shadow.camera.right = 50;
-        sunlight.shadow.camera.top = 50;
-        sunlight.shadow.camera.bottom = -50;
+        this.sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
+        this.sunlight.position.set(20, 30, -10);
+        this.sunlight.castShadow = true;
+        this.sunlight.shadow.mapSize.width = 2048;
+        this.sunlight.shadow.mapSize.height = 2048;
+        this.sunlight.shadow.camera.near = 1;
+        this.sunlight.shadow.camera.far = 100;
+        this.sunlight.shadow.camera.left = -50;
+        this.sunlight.shadow.camera.right = 50;
+        this.sunlight.shadow.camera.top = 50;
+        this.sunlight.shadow.camera.bottom = -50;
 
-        this.scene.add(sunlight);
+        this.scene.add(this.sunlight);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambientLight);
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(this.ambientLight);
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
@@ -111,6 +117,14 @@ export class TestWorld {
                     document.body.classList.toggle("paused");
                     const isPaused = document.body.classList.contains("paused");
                     if (overlay) overlay.style.display = isPaused ? "block" : "none";
+
+                    if (this.paused) {
+                        this.pauseStart = this.clock.getElapsedTime(); // Record when pause starts
+                    } else if (this.pauseStart !== null) {
+                        this.pausedTime += this.clock.getElapsedTime() - this.pauseStart; // Add to total paused time
+                        this.pauseStart = null; // Reset
+                    }
+
                     break;
                 case "Digit1":
                     this.simulationSpeed = 0.5;
@@ -185,6 +199,8 @@ export class TestWorld {
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.008);
 
+        
+
         if (!this.selectedObject) {
             this.highlightObject();
         }
@@ -225,6 +241,27 @@ export class TestWorld {
                     THREE.MathUtils.degToRad(body.rotation.roll)
                 );
             });
+
+            // Day-Night Cycle
+            // Adjust elapsed time by subtracting paused duration
+            const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
+            const dayDuration = 20; // Total cycle time in seconds
+            const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
+
+
+            // Update sun position (orbiting around Y-axis)
+            const radius = 50;
+            this.sun.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius + 10, Math.sin(angle) * radius);
+            this.sunlight.position.copy(this.sun.position);
+
+            // Adjust sunlight intensity (brighter at peak, dim at night)
+            const normalizedHeight = (this.sun.position.y + radius) / (2 * radius); // Normalize between 0 and 1
+            this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
+            this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
+
+            // Change sky color (gradual transition from blue to dark)
+            const skyColor = new THREE.Color().lerpColors(new THREE.Color(0x001a33), new THREE.Color(0x87CEEB), normalizedHeight);
+            this.scene.background = skyColor;
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
