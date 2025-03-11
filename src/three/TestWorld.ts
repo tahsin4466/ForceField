@@ -289,22 +289,22 @@ export class TestWorld {
             const middayColor = new THREE.Color(0x87CEEB); // Sky blue
             const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
             const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
-            const nightColor = new THREE.Color(0x001a33); // Deep night blue
+            const nightColor = new THREE.Color(0x001082); // Deep night blue
 
             // Transition logic
             let skyColor;
-            if (normalizedHeight > 0.75) {
+            if (normalizedHeight > 0.7) {
                 // Daytime (Blue)
                 skyColor = middayColor;
-            } else if (normalizedHeight > 0.45) {
+            } else if (normalizedHeight > 0.5) {
                 // Sunset (Blend from blue to orange)
-                skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.75 - normalizedHeight) / 0.3);
-            } else if (normalizedHeight > 0.2) {
+                skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.7 - normalizedHeight) / 0.2);
+            } else if (normalizedHeight > 0.35) {
                 // Late sunset (Blend from orange to pink)
-                skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.45 - normalizedHeight) / 0.25);
+                skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.5 - normalizedHeight) / 0.15);
             } else {
-                // Night (Blend from pink to deep blue)
-                skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.2 - normalizedHeight) / 0.2);
+                // Night (Blend from pink to deep blue) stronger blue
+                skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.35 - normalizedHeight) / 0.15);
             }
             this.scene.background = skyColor;
 
