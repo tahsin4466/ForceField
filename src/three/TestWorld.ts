@@ -26,10 +26,13 @@ export class TestWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
-    //sun & lighting
+    //sun & moon lighting
     sun: THREE.Mesh | null = null;
     sunlight: THREE.DirectionalLight | null = null;
     ambientLight: THREE.AmbientLight | null = null;
+    moon: THREE.Mesh | null = null;
+    moonlight: THREE.DirectionalLight | null = null;
+
     //day/night cycle
     pausedTime: number = 0;  // Total time spent paused
     pauseStart: number | null = null; // Time when pause started
@@ -85,6 +88,18 @@ export class TestWorld {
         this.sunlight.shadow.camera.bottom = -50;
 
         this.scene.add(this.sunlight);
+
+        // Create the moon (a sphere)
+        const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
+        const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+        this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
+        this.moon.position.set(-20, -30, 10); // Opposite initial position
+        this.scene.add(this.moon);
+
+        // Moonlight as a weak DirectionalLight
+        this.moonlight = new THREE.DirectionalLight(0x8888ff, 0.05); // Very dim blue light
+        this.moonlight.position.set(-20, -30, 10);
+        this.scene.add(this.moonlight);
 
         this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(this.ambientLight);
@@ -245,19 +260,33 @@ export class TestWorld {
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
             const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-            const dayDuration = 20; // Total cycle time in seconds
+            const dayDuration = 240; // Total cycle time in seconds
             const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
             // Update sun position (orbiting around Y-axis)
             const radius = 50;
-            this.sun.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius + 10, Math.sin(angle) * radius);
+            this.sun.position.set(
+                Math.cos(angle) * radius, 
+                Math.sin(angle) * radius + 10, 
+                Math.sin(angle) * radius);
             this.sunlight.position.copy(this.sun.position);
+
+                // Moon position (opposite side)
+            this.moon.position.set(
+                Math.cos(angle + Math.PI) * radius,
+                Math.sin(angle + Math.PI) * radius + 10,
+                Math.sin(angle + Math.PI) * radius
+            );
+            this.moonlight.position.copy(this.moon.position);
 
             // Adjust sunlight intensity (brighter at peak, dim at night)
             const normalizedHeight = (this.sun.position.y + radius) / (2 * radius); // Normalize between 0 and 1
             this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
             this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
+
+            // Moonlight is strongest when the sun is at its lowest
+            this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
 
             // Change sky color (gradual transition from blue to dark)
             const skyColor = new THREE.Color().lerpColors(new THREE.Color(0x001a33), new THREE.Color(0x87CEEB), normalizedHeight);
