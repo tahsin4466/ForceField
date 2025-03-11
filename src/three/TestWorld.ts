@@ -55,11 +55,30 @@ export class TestWorld {
 
         addWorldObjects(this.scene, this.physicsWorld, this.cubes);
 
-        // Lighting
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        light.castShadow = true;
-        this.scene.add(light);
+        //the sun and lighting
+        // Create the sun (a sphere)
+        const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, 
+            //emissive: 0xFFFF00
+        });
+        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        sun.position.set(20, 30, -10); // Position it in the sky
+        this.scene.add(sun);
+
+        // Sunlight as a DirectionalLight
+        const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
+        sunlight.position.set(20, 30, -10);
+        sunlight.castShadow = true;
+        sunlight.shadow.mapSize.width = 2048;
+        sunlight.shadow.mapSize.height = 2048;
+        sunlight.shadow.camera.near = 1;
+        sunlight.shadow.camera.far = 100;
+        sunlight.shadow.camera.left = -50;
+        sunlight.shadow.camera.right = 50;
+        sunlight.shadow.camera.top = 50;
+        sunlight.shadow.camera.bottom = -50;
+
+        this.scene.add(sunlight);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
