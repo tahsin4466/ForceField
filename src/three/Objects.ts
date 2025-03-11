@@ -13,6 +13,7 @@ export interface WorldObject {
     kineticFriction: number;
     bounciness: number;
     inertia: { xx: number; yy: number; zz: number };
+    drag: number;
 }
 
 // Array of world objects
@@ -28,6 +29,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.8,
         bounciness: 0.0,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.07
     },
     {
         name: "Right Wall",
@@ -39,6 +41,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.8,
         bounciness: 0.0,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.07
     },
     {
         name: "Back Wall",
@@ -50,21 +53,8 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.8,
         bounciness: 0.0,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.07
     },
-
-    // Ramps for launching objects
-    {
-        name: "Ramp",
-        color: 0x8b4513,
-        position: { x: -5, y: 1, z: 5 },
-        mass: -1, // Static
-        size: { x: 3, y: 0.5, z: 6 },
-        staticFriction: 0.5,
-        kineticFriction: 0.3,
-        bounciness: 0.1,
-        inertia: { xx: 1, yy: 1, zz: 1 },
-    },
-
     // Bouncy Ball Pit
     {
         name: "Bouncy Ball 1",
@@ -76,6 +66,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.1,
         bounciness: 0.9, // Super bouncy
         inertia: { xx: 5, yy: 5, zz: 5 },
+        drag: 1.07
     },
     {
         name: "Bouncy Ball 2",
@@ -87,6 +78,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.1,
         bounciness: 0.9,
         inertia: { xx: 5, yy: 5, zz: 5 },
+        drag: 1.07
     },
     {
         name: "Bouncy Ball 3",
@@ -98,6 +90,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.1,
         bounciness: 0.9,
         inertia: { xx: 5, yy: 5, zz: 5 },
+        drag: 1.07
     },
 
     // Heavy Metal Blocks
@@ -111,6 +104,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.6,
         bounciness: 0.1,
         inertia: { xx: 0.2, yy: 0.2, zz: 0.2 },
+        drag: 1.07
     },
     {
         name: "Light Wooden Crate",
@@ -122,6 +116,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.4,
         bounciness: 0.3,
         inertia: { xx: 0.5, yy: 0.5, zz: 0.5 },
+        drag: 1.07
     },
 
     // Seesaw
@@ -135,6 +130,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.4,
         bounciness: 0.2,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.28
     },
     {
         name: "Seesaw Pivot",
@@ -146,21 +142,8 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.8,
         bounciness: 0.0,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.07
     },
-
-    // Rolling Cylinder
-    {
-        name: "Rolling Cylinder",
-        color: 0x4b0082,
-        position: { x: 5, y: 2, z: 3 },
-        mass: 3,
-        size: { x: 1, y: 2, z: 1 },
-        staticFriction: 0.2,
-        kineticFriction: 0.1,
-        bounciness: 0.3,
-        inertia: { xx: 2, yy: 2, zz: 2 },
-    },
-
     // Ice Patch (Super Slippery Zone)
     {
         name: "Ice Patch",
@@ -172,6 +155,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.01,
         bounciness: 0.1,
         inertia: { xx: 1, yy: 1, zz: 1 },
+        drag: 1.07
     },
 
     // Dominos (for fun chain reactions)
@@ -185,6 +169,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.3,
         bounciness: 0.1,
         inertia: { xx: 0.1, yy: 0.1, zz: 0.1 },
+        drag: 1.28
     },
     {
         name: "Domino 2",
@@ -196,6 +181,7 @@ export const worldObjects: WorldObject[] = [
         kineticFriction: 0.3,
         bounciness: 0.1,
         inertia: { xx: 0.1, yy: 0.1, zz: 0.1 },
+        drag: 1.28
     },
 ];
 
@@ -205,7 +191,7 @@ export function addWorldObjects(
     physicsWorld: PhysicsWorld,
     objects: { mesh: THREE.Mesh; body: RigidBody }[]
 ) {
-    worldObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia }) => {
+    worldObjects.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia, drag }) => {
         // Create mesh
         const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
         const material = new THREE.MeshStandardMaterial({ color });
@@ -215,7 +201,7 @@ export function addWorldObjects(
         scene.add(mesh);
 
         // Create physics body
-        const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia);
+        const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia, drag);
         body.position = { ...position };
 
         physicsWorld.addObject(body);

@@ -3,7 +3,7 @@ import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
-import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
+import { GravityForce, FrictionForce, DragForce } from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import { addWorldObjects } from "./Objects.ts";
 
@@ -43,6 +43,7 @@ export class TestWorld {
         // Add forces
         this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
         this.physicsWorld.addForceGenerator((new FrictionForce(0.6, 0.4)))
+        this.physicsWorld.addForceGenerator((new DragForce(1.293)))
 
         // Floor (Static)
         const floorGeometry = new THREE.PlaneGeometry(50, 50);

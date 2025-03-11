@@ -1,5 +1,6 @@
 import {RigidBody} from "./RigidBody.ts";
 import {IForceGenerator} from "./ForceGenerator.ts";
+import * as THREE from "three";
 
 export class GravityForce implements IForceGenerator {
     private gravity: number;
@@ -48,4 +49,108 @@ export class FrictionForce implements IForceGenerator {
             }
         }
     }
+}
+
+export class DragForce implements IForceGenerator {
+    private density: number;
+    constructor(fluidDensity: number) {
+        this.density = Math.abs(fluidDensity);
+    }
+    applyForce(body: RigidBody) {
+        let area = getCrossSectionArea(body);
+        const force = {
+            x: -0.5 * this.density * Math.pow(body.velocity.x, 2) * body.drag * area * Math.sign(body.velocity.x),
+            y: -0.5 * this.density * Math.pow(body.velocity.y, 2) * body.drag * area * Math.sign(body.velocity.y),
+            z: -0.5 * this.density * Math.pow(body.velocity.z, 2) * body.drag * area * Math.sign(body.velocity.z),
+        }
+        body.applyForce(force);
+    }
+}
+
+function getCrossSectionArea(body: RigidBody) {
+    // Convert to Three.js vectors
+    const pos = new THREE.Vector3(body.position.x, body.position.y, body.position.z);
+    const vel = new THREE.Vector3(body.velocity.x, body.velocity.y, body.velocity.z).normalize();
+    const halfSize = new THREE.Vector3(body.size.x / 2, body.size.y / 2, body.size.z / 2);
+
+    // Convert rotation to a Three.js Euler and Matrix4 for transformation
+    const euler = new THREE.Euler(body.rotation.pitch, body.rotation.yaw, body.rotation.roll, "XYZ");
+    const rotationMatrix = new THREE.Matrix4();
+    rotationMatrix.makeRotationFromEuler(euler);
+
+    // Define the 8 local-space vertices of a cuboid centered at the origin
+    const localVertices = [
+        new THREE.Vector3(-halfSize.x, -halfSize.y, -halfSize.z),
+        new THREE.Vector3(-halfSize.x, -halfSize.y,  halfSize.z),
+        new THREE.Vector3(-halfSize.x,  halfSize.y, -halfSize.z),
+        new THREE.Vector3(-halfSize.x,  halfSize.y,  halfSize.z),
+        new THREE.Vector3( halfSize.x, -halfSize.y, -halfSize.z),
+        new THREE.Vector3( halfSize.x, -halfSize.y,  halfSize.z),
+        new THREE.Vector3( halfSize.x,  halfSize.y, -halfSize.z),
+        new THREE.Vector3( halfSize.x,  halfSize.y,  halfSize.z),
+    ];
+
+    // Transform vertices into world space
+    const worldVertices = localVertices.map(vertex => {
+        return vertex.clone().applyMatrix4(rotationMatrix).add(pos);
+    });
+
+    // Find the best-fitting 2D projection plane perpendicular to velocity
+    const planeNormal = vel.clone();
+    const basisX = new THREE.Vector3();
+    const basisY = new THREE.Vector3();
+    planeNormal.normalize();
+
+    // Generate an orthonormal basis for the plane
+    if (Math.abs(planeNormal.x) > Math.abs(planeNormal.z)) {
+        basisX.set(-planeNormal.y, planeNormal.x, 0);
+    } else {
+        basisX.set(0, -planeNormal.z, planeNormal.y);
+    }
+    basisX.normalize();
+    basisY.crossVectors(planeNormal, basisX);
+
+    // Project vertices onto the 2D plane
+    const projectedPoints: THREE.Vector2[] = worldVertices.map(vertex => {
+        return new THREE.Vector2(vertex.dot(basisX), vertex.dot(basisY));
+    });
+
+    // Compute convex hull area of the projected points
+    return computeConvexHullArea(projectedPoints);
+}
+
+function computeConvexHullArea(points: THREE.Vector2[]): number {
+    if (points.length < 3) return 0;
+
+    // Compute convex hull using Andrew's monotone chain algorithm
+    points.sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+    const hull: THREE.Vector2[] = [];
+
+    const cross = (o: THREE.Vector2, a: THREE.Vector2, b: THREE.Vector2) =>
+        (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+    for (let i = 0; i < points.length; i++) {
+        while (hull.length >= 2 && cross(hull[hull.length - 2], hull[hull.length - 1], points[i]) <= 0) {
+            hull.pop();
+        }
+        hull.push(points[i]);
+    }
+
+    const lowerSize = hull.length;
+    for (let i = points.length - 2; i >= 0; i--) {
+        while (hull.length > lowerSize && cross(hull[hull.length - 2], hull[hull.length - 1], points[i]) <= 0) {
+            hull.pop();
+        }
+        hull.push(points[i]);
+    }
+    hull.pop(); // Remove last repeated point
+
+    // Compute the area using the shoelace formula
+    let area = 0;
+    for (let i = 0; i < hull.length; i++) {
+        const j = (i + 1) % hull.length;
+        area += hull[i].x * hull[j].y - hull[j].x * hull[i].y;
+    }
+
+    return Math.abs(area) / 2;
 }
