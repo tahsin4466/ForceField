@@ -3,18 +3,30 @@ import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
-import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
+import { GravityForce, FrictionForce, DragForce } from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
-import { addWorldObjects } from "./Objects.ts";
+import {addWorldObjects} from "./Objects.ts";
+import { EarthClearWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
 
-export class TestWorld {
+const id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+
+let world = new EarthClearWorld();
+switch (id) {
+    case 4:
+        world = new MoonWorld();
+        break;
+    case 5:
+        world = new SpaceWorld();
+}
+
+export class GameWorld {
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     controls: FirstPersonControls;
     clock: THREE.Clock;
     physicsWorld: PhysicsWorld;
-    cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
+    physicsObjects: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
     paused: boolean = false;
     private selectionRaycaster = new THREE.Raycaster();
@@ -29,7 +41,7 @@ export class TestWorld {
 
 
     constructor() {
-        this.scene = new THREE.Scene();
+        this.scene = world.scene;
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
@@ -38,31 +50,14 @@ export class TestWorld {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
 
-        this.physicsWorld = new PhysicsWorld();
+        this.physicsWorld = new PhysicsWorld(world.hasFloor);
 
         // Add forces
-        this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
-        this.physicsWorld.addForceGenerator((new FrictionForce(0.6, 0.4)))
+        this.physicsWorld.addForceGenerator(new GravityForce(world.gravity));
+        this.physicsWorld.addForceGenerator((new FrictionForce(world.floorFrictionStatic, world.floorFrictionStatic)))
+        this.physicsWorld.addForceGenerator((new DragForce(world.density)))
 
-        // Floor (Static)
-        const floorGeometry = new THREE.PlaneGeometry(50, 50);
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        this.scene.add(floor);
-        this.scene.background = new THREE.Color(0x87CEEB);
-
-        addWorldObjects(this.scene, this.physicsWorld, this.cubes);
-
-        // Lighting
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        light.castShadow = true;
-        this.scene.add(light);
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambientLight);
+        addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
@@ -113,7 +108,7 @@ export class TestWorld {
                         speedIndicator.style.display = "block";
                     }
                     break;
-                case "KeyX":
+                case "KeyQ":
                     this.deselectObject();
                     break;
                 case "ArrowLeft":
@@ -132,13 +127,29 @@ export class TestWorld {
                         this.pickupDistance += 1;
                     }
                     break;
+                case "BracketLeft":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.pitch += 10;
+                    }
+                    break;
+                case "BracketRight":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.yaw += 10;
+                    }
+                    break;
+                case "Backslash":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.roll += 10;
+                    }
+                    break;
+
             }
         });
         window.addEventListener('click', (event) => {
-            if (event.button === 0) {
+            if (event.button === 0 && !this.selectedObject) {
                 this.selectObjectDrag();
             }
-            if (event.button === 2) {
+            if (event.button === 2 && !this.selectedObject) {
                 this.selectObjectForce();
             }
         });
@@ -197,7 +208,7 @@ export class TestWorld {
 
         if (!this.paused) {
             this.physicsWorld.update(deltaTime * this.simulationSpeed);
-            this.cubes.forEach(({ mesh, body }) => {
+            this.physicsObjects.forEach(({ mesh, body }) => {
                 if (this.pickupDistance && this.selectedObject) this.selectedObject.body.clearForce();
                 mesh.position.set(body.position.x, body.position.y, body.position.z);
                 mesh.rotation.set(
@@ -216,11 +227,11 @@ export class TestWorld {
         const rayOrigin = this.controls.getPosition();
 
         this.selectionRaycaster.set(rayOrigin, direction);
-        const intersects = this.selectionRaycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
+        const intersects = this.selectionRaycaster.intersectObjects(this.physicsObjects.map(cube => cube.mesh));
 
         if (intersects.length > 0) {
             const mesh = intersects[0].object as THREE.Mesh;
-            const cube = this.cubes.find(c => c.mesh === mesh);
+            const cube = this.physicsObjects.find(c => c.mesh === mesh);
 
             if (cube && cube.body.mass >= 0 && this.highlightedObject !== cube) {
                 if (this.highlightedObject) {
