@@ -126,9 +126,6 @@ export class RigidBody {
         );
 
         if (angularSpeed < 0.001) { // Threshold to consider "at rest"
-            this.rotation.pitch = this.snapToNearestAxis(this.rotation.pitch);
-            this.rotation.roll = this.snapToNearestAxis(this.rotation.roll);
-
             // Fully stop any residual angular velocity
             this.angularVelocity = { x: 0, y: 0, z: 0 };
             this.angularAcceleration = { x: 0, y: 0, z: 0 };
@@ -148,9 +145,5 @@ export class RigidBody {
             this.min.z < other.max.z &&
             this.max.z > other.min.z
         );
-    }
-
-    private snapToNearestAxis(angle: number): number {
-        return Math.round(angle / 90) * 90;
     }
 }

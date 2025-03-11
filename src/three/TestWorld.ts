@@ -113,7 +113,7 @@ export class TestWorld {
                         speedIndicator.style.display = "block";
                     }
                     break;
-                case "KeyX":
+                case "KeyQ":
                     this.deselectObject();
                     break;
                 case "ArrowLeft":
