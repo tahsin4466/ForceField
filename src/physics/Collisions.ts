@@ -1,10 +1,10 @@
 import { RigidBody } from "./RigidBody";
 
-export function handleCollisions(objects: RigidBody[]) {
+export function handleCollisions(objects: RigidBody[], hasFloor: boolean) {
     for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
         // Handle ground collision separately
-        if (obj.min.y < 0) {
+        if (hasFloor && obj.min.y < 0) {
             resolveGroundCollision(obj);
         }
 
