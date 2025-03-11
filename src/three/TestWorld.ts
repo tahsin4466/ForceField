@@ -260,7 +260,7 @@ export class TestWorld {
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
             const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-            const dayDuration = 240; // Total cycle time in seconds
+            const dayDuration = 15; // Total cycle time in seconds
             const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
@@ -285,12 +285,33 @@ export class TestWorld {
             this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
             this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
 
+            // Define color stops
+            const middayColor = new THREE.Color(0x87CEEB); // Sky blue
+            const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
+            const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
+            const nightColor = new THREE.Color(0x001a33); // Deep night blue
+
+            // Transition logic
+            let skyColor;
+            if (normalizedHeight > 0.75) {
+                // Daytime (Blue)
+                skyColor = middayColor;
+            } else if (normalizedHeight > 0.45) {
+                // Sunset (Blend from blue to orange)
+                skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.75 - normalizedHeight) / 0.3);
+            } else if (normalizedHeight > 0.2) {
+                // Late sunset (Blend from orange to pink)
+                skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.45 - normalizedHeight) / 0.25);
+            } else {
+                // Night (Blend from pink to deep blue)
+                skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.2 - normalizedHeight) / 0.2);
+            }
+            this.scene.background = skyColor;
+
+
             // Moonlight is strongest when the sun is at its lowest
             this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
 
-            // Change sky color (gradual transition from blue to dark)
-            const skyColor = new THREE.Color().lerpColors(new THREE.Color(0x001a33), new THREE.Color(0x87CEEB), normalizedHeight);
-            this.scene.background = skyColor;
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
