@@ -57,6 +57,7 @@ export class DragForce implements IForceGenerator {
         this.density = Math.abs(fluidDensity);
     }
     applyForce(body: RigidBody) {
+        if (this.density === 0) return;
         let area = getCrossSectionArea(body);
         const force = {
             x: -0.5 * this.density * Math.pow(body.velocity.x, 2) * body.drag * area * Math.sign(body.velocity.x),

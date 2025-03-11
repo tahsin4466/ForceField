@@ -183,6 +183,18 @@ const earthObjects: WorldObject[] = [
         inertia: { xx: 0.1, yy: 0.1, zz: 0.1 },
         drag: 1.28
     },
+    {
+        name: "Paper Sheet",
+        color: 0xffffff,
+        position: {x: 5, y: 1, z: -3},
+        mass: 0.1,
+        size: { x: 2, y: 0.1, z: 1.2 },
+        staticFriction: 0.7,
+        kineticFriction: 0.5,
+        bounciness: 0.01,
+        inertia: {xx: 1, yy: 0.1, zz: 0.2},
+        drag: 1.28
+    }
 ];
 
 

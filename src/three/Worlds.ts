@@ -100,7 +100,7 @@ export class MoonWorld extends BaseWorld {
 
 export class SpaceWorld extends BaseWorld {
     constructor() {
-        super(0, 0, 0, 0.01, false); // No gravity, no friction, no density
+        super(0, 0, 0, 0, false); // No gravity, no friction, no density
     }
 
     setupEnvironment(): void {

@@ -127,13 +127,29 @@ export class GameWorld {
                         this.pickupDistance += 1;
                     }
                     break;
+                case "BracketLeft":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.pitch += 10;
+                    }
+                    break;
+                case "BracketRight":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.yaw += 10;
+                    }
+                    break;
+                case "Backslash":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.roll += 10;
+                    }
+                    break;
+
             }
         });
         window.addEventListener('click', (event) => {
-            if (event.button === 0) {
+            if (event.button === 0 && !this.selectedObject) {
                 this.selectObjectDrag();
             }
-            if (event.button === 2) {
+            if (event.button === 2 && !this.selectedObject) {
                 this.selectObjectForce();
             }
         });
