@@ -62,6 +62,9 @@ export class EarthClearWorld extends BaseWorld {
 }
 
 export class EarthRainWorld extends BaseWorld {
+    private rain!: THREE.Points;
+    private rainVelocity: number = -0.2; // Rain falling speed
+
     constructor() {
         super(-9.8, 0.8, 0.6, 1.279, true);
     }
@@ -90,22 +93,25 @@ export class EarthRainWorld extends BaseWorld {
 
         // ☁️ Add Rain Clouds
         this.createRainClouds();
+
+        // Add Falling Rain 🌧️
+        this.createRainParticles();
     }
 
     private createRainClouds(): void {
         const cloudMaterial = new THREE.MeshStandardMaterial({ color: 0x4A4A4A }); // Dark gray for storm clouds
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) { // number of clouds
             const cloud = new THREE.Group();
 
-            for (let j = 0; j < 3; j++) {
+            for (let j = 0; j < 4; j++) { //puffs per cloud
                 const cloudSphere = new THREE.SphereGeometry(
                     Math.random() * 5 + 5, // Cloud puff size (random between 5-10)
                     16, 
                     16
                 );
                 const cloudMesh = new THREE.Mesh(cloudSphere, cloudMaterial);
-                cloudMesh.position.set(j * 6 - 6, Math.random() * 3, 0); // Spread the puffs
+                cloudMesh.position.set(j * 6 - 9, Math.random() * 3, 0); // Spread the puffs
                 cloud.add(cloudMesh);
             }
 
@@ -118,6 +124,50 @@ export class EarthRainWorld extends BaseWorld {
             this.scene.add(cloud);
         }
     }
+
+    private createRainParticles(): void {
+        const rainGeometry = new THREE.BufferGeometry();
+        const rainVertices: number[] = [];
+        const rainCount = 1000; // Number of rain drops
+
+        for (let i = 0; i < rainCount; i++) {
+            rainVertices.push(
+                (Math.random() - 0.5) * 100, // X position (spread over a large area)
+                Math.random() * 50 + 10, // Y position (falling from the sky)
+                (Math.random() - 0.5) * 100 // Z position (spread out depth-wise)
+            );
+        }
+
+        rainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(rainVertices, 3));
+
+        const rainMaterial = new THREE.PointsMaterial({
+            color: 0xaaaaaa,
+            size: 0.2,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        this.rain = new THREE.Points(rainGeometry, rainMaterial);
+        this.scene.add(this.rain);
+    }
+
+    update(): void {
+        if (this.rain) {
+            const positions = this.rain.geometry.attributes.position.array as Float32Array;
+
+            for (let i = 1; i < positions.length; i += 3) {
+                positions[i] += this.rainVelocity; // Move downward
+
+                if (positions[i] < 0) {
+                    positions[i] = Math.random() * 50 + 10; // Reset raindrop to the top
+                }
+            }
+
+            this.rain.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+
+
 }
 
 

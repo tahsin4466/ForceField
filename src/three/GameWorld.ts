@@ -11,7 +11,7 @@ import { EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.
 //random world generator
 let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
 //for test purposes
-id = 2;
+id = 3;
 
 let world = new EarthClearWorld();
 switch (id) {
@@ -330,6 +330,9 @@ export class GameWorld {
 
                 // Moonlight is strongest when the sun is at its lowest
                 this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
+            }
+            if (id = 3){//code to animate the rain world
+
             }
         }
         this.controls.update(deltaTime)
