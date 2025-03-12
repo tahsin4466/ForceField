@@ -38,7 +38,14 @@ export class GameWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
-
+    
+    sun: THREE.Mesh | null = null;
+    sunlight: THREE.DirectionalLight | null = null;
+    ambientLight: THREE.AmbientLight | null = null;
+    moon: THREE.Mesh | null = null;
+    moonlight: THREE.DirectionalLight | null = null;
+    pausedTime: number = 0;  // Total time spent paused
+    pauseStart: number | null = null; // Time when pause started
 
     constructor() {
         this.scene = world.scene;
@@ -58,6 +65,44 @@ export class GameWorld {
         this.physicsWorld.addForceGenerator((new DragForce(world.density)))
 
         addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
+
+        if (id <= 3) {
+            //the sun and lighting
+            // Create the sun (a sphere)
+            const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+            this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            this.sun.position.set(20, 30, -10); // Position it in the sky
+            this.scene.add(this.sun);
+
+            // Sunlight as a DirectionalLight
+            this.sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
+            this.sunlight.position.set(20, 30, -10);
+            this.sunlight.castShadow = true;
+            this.sunlight.shadow.mapSize.width = 2048;
+            this.sunlight.shadow.mapSize.height = 2048;
+            this.sunlight.shadow.camera.near = 1;
+            this.sunlight.shadow.camera.far = 100;
+            this.sunlight.shadow.camera.left = -50;
+            this.sunlight.shadow.camera.right = 50;
+            this.sunlight.shadow.camera.top = 50;
+            this.sunlight.shadow.camera.bottom = -50;
+            this.scene.add(this.sunlight);
+
+            // Create the moon (a sphere)
+            const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
+            const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+            this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
+            this.moon.position.set(-20, -30, 10); // Opposite initial position
+            this.scene.add(this.moon);
+
+            // Moonlight as a weak DirectionalLight
+            this.moonlight = new THREE.DirectionalLight(0x8888ff, 0.05); // Very dim blue light
+            this.moonlight.position.set(-20, -30, 10);
+            this.scene.add(this.moonlight);
+            this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            this.scene.add(this.ambientLight);
+        }
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
@@ -87,6 +132,12 @@ export class GameWorld {
                     document.body.classList.toggle("paused");
                     const isPaused = document.body.classList.contains("paused");
                     if (overlay) overlay.style.display = isPaused ? "block" : "none";
+                    if (this.paused) {
+                        this.pauseStart = this.clock.getElapsedTime(); // Record when pause starts
+                    } else if (this.pauseStart !== null) {
+                        this.pausedTime += this.clock.getElapsedTime() - this.pauseStart; // Add to total paused time
+                        this.pauseStart = null; // Reset
+                    }
                     break;
                 case "Digit1":
                     this.simulationSpeed = 0.5;
@@ -217,6 +268,63 @@ export class GameWorld {
                     THREE.MathUtils.degToRad(body.rotation.roll)
                 );
             });
+          
+            // Day-Night Cycle
+            // Adjust elapsed time by subtracting paused duration
+            if (id <= 3) {
+                const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
+                const dayDuration = 15; // Total cycle time in seconds
+                const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
+
+
+                // Update sun position (orbiting around Y-axis)
+                const radius = 50;
+                this.sun.position.set(
+                    Math.cos(angle) * radius, 
+                    Math.sin(angle) * radius + 10, 
+                    Math.sin(angle) * radius);
+                this.sunlight.position.copy(this.sun.position);
+
+                    // Moon position (opposite side)
+                this.moon.position.set(
+                    Math.cos(angle + Math.PI) * radius,
+                    Math.sin(angle + Math.PI) * radius + 10,
+                    Math.sin(angle + Math.PI) * radius
+                );
+                this.moonlight.position.copy(this.moon.position);
+
+                // Adjust sunlight intensity (brighter at peak, dim at night)
+                const normalizedHeight = (this.sun.position.y + radius) / (2 * radius); // Normalize between 0 and 1
+                this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
+                this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
+
+                // Define color stops
+                const middayColor = new THREE.Color(0x87CEEB); // Sky blue
+                const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
+                const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
+                const nightColor = new THREE.Color(0x001082); // Deep night blue
+
+                // Transition logic
+                let skyColor;
+                if (normalizedHeight > 0.7) {
+                    // Daytime (Blue)
+                    skyColor = middayColor;
+                } else if (normalizedHeight > 0.5) {
+                    // Sunset (Blend from blue to orange)
+                    skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.7 - normalizedHeight) / 0.2);
+                } else if (normalizedHeight > 0.35) {
+                    // Late sunset (Blend from orange to pink)
+                    skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.5 - normalizedHeight) / 0.15);
+                } else {
+                    // Night (Blend from pink to deep blue) stronger blue
+                    skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.35 - normalizedHeight) / 0.15);
+                }
+                this.scene.background = skyColor;
+
+
+                // Moonlight is strongest when the sun is at its lowest
+                this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
+            }
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);

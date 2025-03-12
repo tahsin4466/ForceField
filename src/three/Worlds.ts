@@ -44,15 +44,6 @@ export class EarthClearWorld extends BaseWorld {
         floor.receiveShadow = true;
         this.scene.add(floor);
         this.scene.background = new THREE.Color(0x87CEEB);
-
-        // Lighting
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        light.castShadow = true;
-        this.scene.add(light);
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambientLight);
     }
 }
 
