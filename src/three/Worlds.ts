@@ -72,7 +72,38 @@ export class EarthRainWorld extends BaseWorld {
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         this.scene.add(directionalLight);
-}
+    
+
+        // ☁️ Add Rain Clouds
+        this.createRainClouds();
+    }
+
+    private createRainClouds(): void {
+        const cloudMaterial = new THREE.MeshStandardMaterial({ color: 0x4A4A4A }); // Dark gray for storm clouds
+
+        for (let i = 0; i < 5; i++) {
+            const cloud = new THREE.Group();
+
+            for (let j = 0; j < 3; j++) {
+                const cloudSphere = new THREE.SphereGeometry(
+                    Math.random() * 5 + 5, // Cloud puff size (random between 5-10)
+                    16, 
+                    16
+                );
+                const cloudMesh = new THREE.Mesh(cloudSphere, cloudMaterial);
+                cloudMesh.position.set(j * 6 - 6, Math.random() * 3, 0); // Spread the puffs
+                cloud.add(cloudMesh);
+            }
+
+            cloud.position.set(
+                (Math.random() - 0.5) * 50, // Spread across sky
+                30 + Math.random() * 5, // Floating height
+                (Math.random() - 0.5) * 50
+            );
+
+            this.scene.add(cloud);
+        }
+    }
 }
 
 
