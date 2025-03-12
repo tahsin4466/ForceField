@@ -11,7 +11,7 @@ import { EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.
 //random world generator
 let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
 //for test purposes
-id = 3;
+id = 2;
 
 let world = new EarthClearWorld();
 switch (id) {

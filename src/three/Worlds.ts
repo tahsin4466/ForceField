@@ -43,7 +43,21 @@ export class EarthClearWorld extends BaseWorld {
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         this.scene.add(floor);
-        this.scene.background = new THREE.Color(0x87CEEB);
+
+        // Add floating stars
+        const starGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        for (let i = 0; i < 200; i++) {
+            starVertices.push(
+                (Math.random() - 0.5) * 1000,
+                (Math.random() - 0.5) * 1000,
+                (Math.random() - 0.5) * 1000
+            );
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        this.scene.add(stars);
     }
 }
 
