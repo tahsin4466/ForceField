@@ -52,6 +52,9 @@ export class GameWorld {
     moonlight: THREE.DirectionalLight | null = null;
     pausedTime: number = 0;  // Total time spent paused
     pauseStart: number | null = null; // Time when pause started
+    rain: THREE.Points | null = null;
+    rainVelocity: number = -0.2; // Define a constant speed for the rain
+
 
     constructor() {
         this.scene = world.scene;
@@ -108,6 +111,36 @@ export class GameWorld {
             this.scene.add(this.moonlight);
             this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             this.scene.add(this.ambientLight);
+        }
+
+        if (id === 3){
+            console.log("Creating rain particles...");
+            
+
+            const rainGeometry = new THREE.BufferGeometry();
+            const rainVertices: number[] = [];
+            const rainCount = 1000; // Number of rain drops
+    
+            for (let i = 0; i < rainCount; i++) {
+                rainVertices.push(
+                    (Math.random() - 0.5) * 100, // X position (spread over a large area)
+                    Math.random() * 50 + 10, // Y position (falling from the sky)
+                    (Math.random() - 0.5) * 100 // Z position (spread out depth-wise)
+                );
+            }
+    
+            rainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(rainVertices, 3));
+    
+            const rainMaterial = new THREE.PointsMaterial({
+                color: 0xaaaaaa,
+                size: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+    
+            this.rain = new THREE.Points(rainGeometry, rainMaterial);
+            this.scene.add(this.rain);
+            console.log("Rain particles created:", this.rain);
         }
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
@@ -331,9 +364,24 @@ export class GameWorld {
                 // Moonlight is strongest when the sun is at its lowest
                 this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
             }
-            if (id = 3){//code to animate the rain world
-
-            }
+            if (id === 3){//code to animate the rain world
+                if (!this.rain) {
+                    console.error("Rain particles are not initialized!");
+                    return; // Early exit if rain particles are not initialized
+                }
+                if (this.rain) {
+                    const positions = this.rain.geometry.attributes.position.array as Float32Array;
+        
+                    for (let i = 1; i < positions.length; i += 3) {
+                        positions[i] += this.rainVelocity; // Move downward
+        
+                        if (positions[i] < 0) {
+                            positions[i] = Math.random() * 50 + 10; // Reset raindrop to the top
+                        }
+                    }
+        
+                    this.rain.geometry.attributes.position.needsUpdate = true;
+                }            }
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);

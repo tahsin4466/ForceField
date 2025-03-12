@@ -94,8 +94,6 @@ export class EarthRainWorld extends BaseWorld {
         // ☁️ Add Rain Clouds
         this.createRainClouds();
 
-        // Add Falling Rain 🌧️
-        this.createRainParticles();
     }
 
     private createRainClouds(): void {
@@ -125,33 +123,14 @@ export class EarthRainWorld extends BaseWorld {
         }
     }
 
-    private createRainParticles(): void {
-        const rainGeometry = new THREE.BufferGeometry();
-        const rainVertices: number[] = [];
-        const rainCount = 1000; // Number of rain drops
 
-        for (let i = 0; i < rainCount; i++) {
-            rainVertices.push(
-                (Math.random() - 0.5) * 100, // X position (spread over a large area)
-                Math.random() * 50 + 10, // Y position (falling from the sky)
-                (Math.random() - 0.5) * 100 // Z position (spread out depth-wise)
-            );
-        }
-
-        rainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(rainVertices, 3));
-
-        const rainMaterial = new THREE.PointsMaterial({
-            color: 0xaaaaaa,
-            size: 0.2,
-            transparent: true,
-            opacity: 0.6
-        });
-
-        this.rain = new THREE.Points(rainGeometry, rainMaterial);
-        this.scene.add(this.rain);
-    }
 
     update(): void {
+        //tester code
+        if (!this.rain) {
+            console.error("Rain particles are not initialized!");
+            return; // Early exit if rain particles are not initialized
+        }
         if (this.rain) {
             const positions = this.rain.geometry.attributes.position.array as Float32Array;
 
