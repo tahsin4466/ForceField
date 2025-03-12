@@ -47,6 +47,35 @@ export class EarthClearWorld extends BaseWorld {
     }
 }
 
+export class EarthRainWorld extends BaseWorld {
+    constructor() {
+        super(-9.8, 0.8, 0.6, 1.279, true);
+    }
+
+    setupEnvironment(): void {
+        // gray, overcast sky
+        this.scene.background = new THREE.Color(0x6E6E6E);
+
+        const floorGeometry = new THREE.PlaneGeometry(50, 50);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x2F4F2F }); // Darker green for wet grass
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        this.scene.add(floor);
+
+        // Dim ambient light for a rainy mood
+        const ambientLight = new THREE.AmbientLight(0x555555, 0.5); // Lower intensity, grayish
+        this.scene.add(ambientLight);
+
+        // Directional light for soft overcast effect
+        const directionalLight = new THREE.DirectionalLight(0xAAAAAA, 0.7);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        this.scene.add(directionalLight);
+}
+}
+
+
 export class MoonWorld extends BaseWorld {
     constructor() {
         super(-1.62, 0.3, 0.2, 0.003, true);

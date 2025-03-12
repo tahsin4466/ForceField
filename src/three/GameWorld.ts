@@ -6,12 +6,18 @@ import { Bomb } from './Bomb';
 import { GravityForce, FrictionForce, DragForce } from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import {addWorldObjects} from "./Objects.ts";
-import { EarthClearWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
+import { EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
 
-const id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+//random world generator
+let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+//for test purposes
+id = 3;
 
 let world = new EarthClearWorld();
 switch (id) {
+    case 3:
+        world = new EarthRainWorld();
+        break;
     case 4:
         world = new MoonWorld();
         break;
@@ -66,7 +72,7 @@ export class GameWorld {
 
         addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
-        if (id <= 3) {
+        if (id <= 2) {
             //the sun and lighting
             // Create the sun (a sphere)
             const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
@@ -271,7 +277,7 @@ export class GameWorld {
           
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
-            if (id <= 3) {
+            if (id <= 2) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
                 const dayDuration = 15; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
