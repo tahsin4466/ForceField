@@ -25,7 +25,7 @@ export class Bomb {
         const explosionRadius = this.big ? 13 : 4; // Bigger bombs affect a wider area
         const explosionColor = this.big ? 0xffa500 : 0xff4444; // More intense red-orange for large explosions
 
-        // Delegate explosion logic to `TestWorld`
+        // Delegate explosion logic to `GameWorld`
         onDetonate(this.position, explosionForce, explosionRadius, explosionColor);
 
         // Remove bomb from scene

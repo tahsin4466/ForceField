@@ -409,7 +409,7 @@ export function addWorldObjects(
         default:
             objectBlueprint = earthObjects;
     }
-    objectBlueprint.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia }) => {
+    objectBlueprint.forEach(({ color, size, position, mass, staticFriction, kineticFriction, bounciness, inertia, drag }) => {
         // Create mesh
         const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
         const material = new THREE.MeshStandardMaterial({ color });
@@ -419,7 +419,7 @@ export function addWorldObjects(
         scene.add(mesh);
 
         // Create physics body
-        const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia);
+        const body = new RigidBody(mass, size, staticFriction, kineticFriction, bounciness, inertia, drag);
         body.position = { ...position };
 
         physicsWorld.addObject(body);

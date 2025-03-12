@@ -1,10 +1,10 @@
 import { RigidBody } from "./RigidBody";
 
-export function handleCollisions(objects: RigidBody[]) {
+export function handleCollisions(objects: RigidBody[], hasFloor: boolean) {
     for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
         // Handle ground collision separately
-        if (obj.min.y < 0) {
+        if (hasFloor && obj.min.y < 0) {
             resolveGroundCollision(obj);
         }
 
@@ -30,6 +30,11 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
         return; // No actual collision
     }
 
+    // Compute mass ratio for proportional movement
+    const totalMass = objA.mass + objB.mass;
+    const massRatioA = objB.mass / totalMass;
+    const massRatioB = objA.mass / totalMass;
+
     // Get the smallest overlap in each axis
     const overlapX = Math.min(overlapX_A, overlapX_B);
     const overlapY = Math.min(overlapY_A, overlapY_B);
@@ -49,13 +54,23 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
             if (!objA_Immovable) objA.position.x += pushAmount;
             if (!objB_Immovable) objB.position.x -= pushAmount;
         }
-
-        // ✅ **Handle perfect reflection for immovable objects**
-        if (objA_Immovable) {
-            objB.velocity.x = -objB.velocity.x * objA.bounciness; // Reflect using objA's restitution
+        let finalBVelocity = (-objB.velocity.x * objB.bounciness) + (-objA.velocity.x * (1-objA.bounciness));
+        let finalAVelocity = (-objA.velocity.x * objA.bounciness) + (-objB.velocity.x * (1-objB.bounciness));
+        if (!objB_Immovable) {
+            if (!objA_Immovable) {
+                objB.velocity.x = finalBVelocity * massRatioB;
+            }
+            else {
+                objB.velocity.x = finalBVelocity;
+            }
         }
-        if (objB_Immovable) {
-            objA.velocity.x = -objA.velocity.x * objB.bounciness; // Reflect using objB's restitution
+        if (!objA_Immovable) {
+            if (!objB_Immovable) {
+                objA.velocity.x = finalAVelocity * massRatioA;
+            }
+            else {
+                objA.velocity.x = finalAVelocity;
+            }
         }
     } else if (overlapY < overlapZ) {
         const pushAmount = overlapY * 0.5;
@@ -66,17 +81,23 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
             if (!objA_Immovable) objA.position.y += pushAmount;
             if (!objB_Immovable) objB.position.y -= pushAmount;
         }
-
-        // **If objects are resting, stop them from floating**
-        if (!objA_Immovable && Math.abs(objA.velocity.y) < 0.5) objA.velocity.y = 0;
-        if (!objB_Immovable && Math.abs(objB.velocity.y) < 0.5) objB.velocity.y = 0;
-
-        // ✅ **Perfect reflection for immovable objects**
-        if (objA_Immovable) {
-            objB.velocity.y = -objB.velocity.y * objA.bounciness;
+        let finalBVelocity = (-objB.velocity.y * objB.bounciness) + (-objA.velocity.y* (1-objA.bounciness));
+        let finalAVelocity = (-objA.velocity.y * objA.bounciness) + (-objB.velocity.y * (1-objB.bounciness));
+        if (!objB_Immovable) {
+            if (!objA_Immovable) {
+                objB.velocity.y = finalBVelocity * massRatioB;
+            }
+            else {
+                objB.velocity.y = finalBVelocity;
+            }
         }
-        if (objB_Immovable) {
-            objA.velocity.y = -objA.velocity.y * objB.bounciness;
+        if (!objA_Immovable) {
+            if (!objB_Immovable) {
+                objA.velocity.y = finalAVelocity * massRatioA;
+            }
+            else {
+                objA.velocity.y = finalAVelocity;
+            }
         }
     } else {
         const pushAmount = overlapZ * 0.5;
@@ -87,17 +108,27 @@ function resolveObjectCollision(objA: RigidBody, objB: RigidBody) {
             if (!objA_Immovable) objA.position.z += pushAmount;
             if (!objB_Immovable) objB.position.z -= pushAmount;
         }
-
-        // ✅ **Perfect reflection for immovable objects**
-        if (objA_Immovable) {
-            objB.velocity.z = -objB.velocity.z * objA.bounciness;
+        let finalBVelocity = (-objB.velocity.z * objB.bounciness) + (-objA.velocity.z * (1-objA.bounciness));
+        let finalAVelocity = (-objA.velocity.z * objA.bounciness) + (-objB.velocity.z * (1-objB.bounciness));
+        if (!objB_Immovable) {
+            if (!objA_Immovable) {
+                objB.velocity.z = finalBVelocity * massRatioB;
+            }
+            else {
+                objB.velocity.z = finalBVelocity;
+            }
         }
-        if (objB_Immovable) {
-            objA.velocity.z = -objA.velocity.z * objB.bounciness;
+        if (!objA_Immovable) {
+            if (!objB_Immovable) {
+                objA.velocity.z = finalAVelocity * massRatioA;
+            }
+            else {
+                objA.velocity.z = finalAVelocity;
+            }
         }
     }
 
-    // **Apply friction after collision resolution**
+    // Apply friction after collision resolution
     const combinedFriction = (objA.kineticFriction + objB.kineticFriction) / 2;
     applyFrictionDuringCollision(objA, combinedFriction);
     applyFrictionDuringCollision(objB, combinedFriction);

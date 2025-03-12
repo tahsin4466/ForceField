@@ -9,12 +9,13 @@ export class RigidBody {
     size: { x: number, y: number, z: number };
     staticFriction: number;
     kineticFriction: number;
+    drag: number;
     bounciness: number;
     torque: { x: number, y: number, z: number };
     inertia: { xx: number, yy: number, zz: number };
 
 
-    constructor(mass = 1, size = { x: 0.5, y: 0.5, z: 0.5 }, staticFriction = 0.3, kineticFriction = 0.2, bounciness = 0.0, inertia = { xx: 1, yy: 1, zz: 1 }) {
+    constructor(mass = 1, size = { x: 0.5, y: 0.5, z: 0.5 }, staticFriction = 0.3, kineticFriction = 0.2, bounciness = 0.0, inertia = { xx: 1, yy: 1, zz: 1 }, drag=1.05) {
         this.mass = mass;
         this.position = { x: 0, y: 0, z: 0 };
         this.velocity = { x: 0, y: 0, z: 0 };
@@ -27,7 +28,8 @@ export class RigidBody {
         this.angularAcceleration = { x: 0, y: 0, z: 0 };
         this.inertia = inertia;
         this.torque = { x: 0, y: 0, z: 0 };
-        this.rotation = { pitch: 0, yaw: 0, roll: 0 }; // Initialize the rotation
+        this.rotation = { pitch: 0, yaw: 0, roll: 0 };
+        this.drag = drag;
     }
 
     // Get bounding box (min and max coordinates)
@@ -126,9 +128,6 @@ export class RigidBody {
         );
 
         if (angularSpeed < 0.001) { // Threshold to consider "at rest"
-            this.rotation.pitch = this.snapToNearestAxis(this.rotation.pitch);
-            this.rotation.roll = this.snapToNearestAxis(this.rotation.roll);
-
             // Fully stop any residual angular velocity
             this.angularVelocity = { x: 0, y: 0, z: 0 };
             this.angularAcceleration = { x: 0, y: 0, z: 0 };
@@ -148,9 +147,5 @@ export class RigidBody {
             this.min.z < other.max.z &&
             this.max.z > other.min.z
         );
-    }
-
-    private snapToNearestAxis(angle: number): number {
-        return Math.round(angle / 90) * 90;
     }
 }

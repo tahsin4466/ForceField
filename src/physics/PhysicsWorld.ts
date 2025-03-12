@@ -6,6 +6,11 @@ export class PhysicsWorld {
     private objects: RigidBody[] = [];
     private forceGenerators: IForceGenerator[] = [];
     private externalForces: IExternalForceGenerator[] = [];
+    private hasFloor: boolean;
+
+    constructor(hasFloor: boolean) {
+        this.hasFloor = hasFloor;
+    }
 
     addObject(object: RigidBody) {
         this.objects.push(object);
@@ -40,7 +45,7 @@ export class PhysicsWorld {
         this.externalForces = [];
 
         // Resolve collisions
-        handleCollisions(this.objects);
+        handleCollisions(this.objects, this.hasFloor);
 
         // Update object positions and rotations
         this.objects.forEach(obj => {

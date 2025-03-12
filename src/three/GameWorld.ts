@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { FirstPersonControls } from './FirstPerson.ts';
-import { PhysicsWorld } from '../physics/PhysicsWorld.ts';
-import { RigidBody } from '../physics/RigidBody.ts';
-import { Bomb } from './Bomb.ts';
-import { GravityForce, FrictionForce } from '../physics/ContinuousForces.ts';
-import { ExplosionForce, CursorForce } from "../physics/ImpulseForces.ts"
+import { FirstPersonControls } from './FirstPerson';
+import { PhysicsWorld } from '../physics/PhysicsWorld';
+import { RigidBody } from '../physics/RigidBody';
+import { Bomb } from './Bomb';
+import { GravityForce, FrictionForce, DragForce } from '../physics/ContinuousForces';
+import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import {addWorldObjects} from "./Objects.ts";
 import { EarthClearWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
 
@@ -38,19 +38,14 @@ export class GameWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
-
-    //Earth specific shit
     
-    //sun & moon lighting
     sun: THREE.Mesh | null = null;
     sunlight: THREE.DirectionalLight | null = null;
     ambientLight: THREE.AmbientLight | null = null;
     moon: THREE.Mesh | null = null;
     moonlight: THREE.DirectionalLight | null = null;
-    //day/night cycle
     pausedTime: number = 0;  // Total time spent paused
     pauseStart: number | null = null; // Time when pause started
-
 
     constructor() {
         this.scene = world.scene;
@@ -62,11 +57,12 @@ export class GameWorld {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
 
-        this.physicsWorld = new PhysicsWorld();
+        this.physicsWorld = new PhysicsWorld(world.hasFloor);
 
         // Add forces
         this.physicsWorld.addForceGenerator(new GravityForce(world.gravity));
         this.physicsWorld.addForceGenerator((new FrictionForce(world.floorFrictionStatic, world.floorFrictionStatic)))
+        this.physicsWorld.addForceGenerator((new DragForce(world.density)))
 
         addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
@@ -90,37 +86,24 @@ export class GameWorld {
             this.sunlight.shadow.camera.left = -50;
             this.sunlight.shadow.camera.right = 50;
             this.sunlight.shadow.camera.top = 50;
-
             this.sunlight.shadow.camera.bottom = -50;
-
-
-
             this.scene.add(this.sunlight);
 
-
-
             // Create the moon (a sphere)
-
             const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
-
             const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
-
             this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
-
             this.moon.position.set(-20, -30, 10); // Opposite initial position
-
             this.scene.add(this.moon);
 
-
-
             // Moonlight as a weak DirectionalLight
-
             this.moonlight = new THREE.DirectionalLight(0x8888ff, 0.05); // Very dim blue light
             this.moonlight.position.set(-20, -30, 10);
             this.scene.add(this.moonlight);
             this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             this.scene.add(this.ambientLight);
         }
+
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
 
@@ -149,14 +132,12 @@ export class GameWorld {
                     document.body.classList.toggle("paused");
                     const isPaused = document.body.classList.contains("paused");
                     if (overlay) overlay.style.display = isPaused ? "block" : "none";
-
                     if (this.paused) {
                         this.pauseStart = this.clock.getElapsedTime(); // Record when pause starts
                     } else if (this.pauseStart !== null) {
                         this.pausedTime += this.clock.getElapsedTime() - this.pauseStart; // Add to total paused time
                         this.pauseStart = null; // Reset
                     }
-
                     break;
                 case "Digit1":
                     this.simulationSpeed = 0.5;
@@ -250,6 +231,7 @@ export class GameWorld {
         if (!this.selectedObject) {
             this.highlightObject();
         }
+
         if (this.forceArrow && this.selectedObject) {
             const direction = this.camera.getWorldDirection(new THREE.Vector3());
             this.forceRaycaster.set(this.intersectionPoint, direction);
@@ -286,7 +268,7 @@ export class GameWorld {
                     THREE.MathUtils.degToRad(body.rotation.roll)
                 );
             });
-
+          
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
             if (id <= 3) {
