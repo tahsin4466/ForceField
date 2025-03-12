@@ -1,20 +1,32 @@
 import * as THREE from 'three';
-import { FirstPersonControls } from './FirstPerson';
-import { PhysicsWorld } from '../physics/PhysicsWorld';
-import { RigidBody } from '../physics/RigidBody';
-import { Bomb } from './Bomb';
-import { GravityForce, FrictionForce } from '../physics/ContinuousForces';
-import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
-import { addWorldObjects } from "./Objects.ts";
+import { FirstPersonControls } from './FirstPerson.ts';
+import { PhysicsWorld } from '../physics/PhysicsWorld.ts';
+import { RigidBody } from '../physics/RigidBody.ts';
+import { Bomb } from './Bomb.ts';
+import { GravityForce, FrictionForce } from '../physics/ContinuousForces.ts';
+import { ExplosionForce, CursorForce } from "../physics/ImpulseForces.ts"
+import {addWorldObjects} from "./Objects.ts";
+import { EarthClearWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
 
-export class TestWorld {
+const id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+
+let world = new EarthClearWorld();
+switch (id) {
+    case 4:
+        world = new MoonWorld();
+        break;
+    case 5:
+        world = new SpaceWorld();
+}
+
+export class GameWorld {
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     controls: FirstPersonControls;
     clock: THREE.Clock;
     physicsWorld: PhysicsWorld;
-    cubes: { mesh: THREE.Mesh, body: RigidBody }[] = [];
+    physicsObjects: { mesh: THREE.Mesh, body: RigidBody }[] = [];
     bombs: Bomb[] = [];
     paused: boolean = false;
     private selectionRaycaster = new THREE.Raycaster();
@@ -26,21 +38,22 @@ export class TestWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
+
+    //Earth specific shit
+    
     //sun & moon lighting
     sun: THREE.Mesh | null = null;
     sunlight: THREE.DirectionalLight | null = null;
     ambientLight: THREE.AmbientLight | null = null;
     moon: THREE.Mesh | null = null;
     moonlight: THREE.DirectionalLight | null = null;
-
     //day/night cycle
     pausedTime: number = 0;  // Total time spent paused
     pauseStart: number | null = null; // Time when pause started
 
 
-
     constructor() {
-        this.scene = new THREE.Scene();
+        this.scene = world.scene;
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
 
@@ -52,58 +65,62 @@ export class TestWorld {
         this.physicsWorld = new PhysicsWorld();
 
         // Add forces
-        this.physicsWorld.addForceGenerator(new GravityForce(-9.8));
-        this.physicsWorld.addForceGenerator((new FrictionForce(0.6, 0.4)))
+        this.physicsWorld.addForceGenerator(new GravityForce(world.gravity));
+        this.physicsWorld.addForceGenerator((new FrictionForce(world.floorFrictionStatic, world.floorFrictionStatic)))
 
-        // Floor (Static)
-        const floorGeometry = new THREE.PlaneGeometry(50, 50);
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        this.scene.add(floor);
-        this.scene.background = new THREE.Color(0x87CEEB);
+        addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
-        addWorldObjects(this.scene, this.physicsWorld, this.cubes);
+        if (id <= 3) {
+            //the sun and lighting
+            // Create the sun (a sphere)
+            const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+            this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            this.sun.position.set(20, 30, -10); // Position it in the sky
+            this.scene.add(this.sun);
 
-        //the sun and lighting
-        // Create the sun (a sphere)
-        const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
-        this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        this.sun.position.set(20, 30, -10); // Position it in the sky
-        this.scene.add(this.sun);
+            // Sunlight as a DirectionalLight
+            this.sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
+            this.sunlight.position.set(20, 30, -10);
+            this.sunlight.castShadow = true;
+            this.sunlight.shadow.mapSize.width = 2048;
+            this.sunlight.shadow.mapSize.height = 2048;
+            this.sunlight.shadow.camera.near = 1;
+            this.sunlight.shadow.camera.far = 100;
+            this.sunlight.shadow.camera.left = -50;
+            this.sunlight.shadow.camera.right = 50;
+            this.sunlight.shadow.camera.top = 50;
 
-        // Sunlight as a DirectionalLight
-        this.sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
-        this.sunlight.position.set(20, 30, -10);
-        this.sunlight.castShadow = true;
-        this.sunlight.shadow.mapSize.width = 2048;
-        this.sunlight.shadow.mapSize.height = 2048;
-        this.sunlight.shadow.camera.near = 1;
-        this.sunlight.shadow.camera.far = 100;
-        this.sunlight.shadow.camera.left = -50;
-        this.sunlight.shadow.camera.right = 50;
-        this.sunlight.shadow.camera.top = 50;
-        this.sunlight.shadow.camera.bottom = -50;
+            this.sunlight.shadow.camera.bottom = -50;
 
-        this.scene.add(this.sunlight);
 
-        // Create the moon (a sphere)
-        const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
-        const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
-        this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
-        this.moon.position.set(-20, -30, 10); // Opposite initial position
-        this.scene.add(this.moon);
 
-        // Moonlight as a weak DirectionalLight
-        this.moonlight = new THREE.DirectionalLight(0x8888ff, 0.05); // Very dim blue light
-        this.moonlight.position.set(-20, -30, 10);
-        this.scene.add(this.moonlight);
+            this.scene.add(this.sunlight);
 
-        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(this.ambientLight);
 
+
+            // Create the moon (a sphere)
+
+            const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
+
+            const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+
+            this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
+
+            this.moon.position.set(-20, -30, 10); // Opposite initial position
+
+            this.scene.add(this.moon);
+
+
+
+            // Moonlight as a weak DirectionalLight
+
+            this.moonlight = new THREE.DirectionalLight(0x8888ff, 0.05); // Very dim blue light
+            this.moonlight.position.set(-20, -30, 10);
+            this.scene.add(this.moonlight);
+            this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            this.scene.add(this.ambientLight);
+        }
         this.controls = new FirstPersonControls(this.camera, this.scene);
         this.clock = new THREE.Clock();
 
@@ -161,7 +178,7 @@ export class TestWorld {
                         speedIndicator.style.display = "block";
                     }
                     break;
-                case "KeyX":
+                case "KeyQ":
                     this.deselectObject();
                     break;
                 case "ArrowLeft":
@@ -180,13 +197,29 @@ export class TestWorld {
                         this.pickupDistance += 1;
                     }
                     break;
+                case "BracketLeft":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.pitch += 10;
+                    }
+                    break;
+                case "BracketRight":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.yaw += 10;
+                    }
+                    break;
+                case "Backslash":
+                    if (!this.forceArrow && this.selectedObject) {
+                        this.selectedObject.body.rotation.roll += 10;
+                    }
+                    break;
+
             }
         });
         window.addEventListener('click', (event) => {
-            if (event.button === 0) {
+            if (event.button === 0 && !this.selectedObject) {
                 this.selectObjectDrag();
             }
-            if (event.button === 2) {
+            if (event.button === 2 && !this.selectedObject) {
                 this.selectObjectForce();
             }
         });
@@ -214,12 +247,9 @@ export class TestWorld {
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.008);
 
-        
-
         if (!this.selectedObject) {
             this.highlightObject();
         }
-
         if (this.forceArrow && this.selectedObject) {
             const direction = this.camera.getWorldDirection(new THREE.Vector3());
             this.forceRaycaster.set(this.intersectionPoint, direction);
@@ -247,7 +277,7 @@ export class TestWorld {
 
         if (!this.paused) {
             this.physicsWorld.update(deltaTime * this.simulationSpeed);
-            this.cubes.forEach(({ mesh, body }) => {
+            this.physicsObjects.forEach(({ mesh, body }) => {
                 if (this.pickupDistance && this.selectedObject) this.selectedObject.body.clearForce();
                 mesh.position.set(body.position.x, body.position.y, body.position.z);
                 mesh.rotation.set(
@@ -259,59 +289,60 @@ export class TestWorld {
 
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
-            const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-            const dayDuration = 15; // Total cycle time in seconds
-            const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
+            if (id <= 3) {
+                const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
+                const dayDuration = 15; // Total cycle time in seconds
+                const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
-            // Update sun position (orbiting around Y-axis)
-            const radius = 50;
-            this.sun.position.set(
-                Math.cos(angle) * radius, 
-                Math.sin(angle) * radius + 10, 
-                Math.sin(angle) * radius);
-            this.sunlight.position.copy(this.sun.position);
+                // Update sun position (orbiting around Y-axis)
+                const radius = 50;
+                this.sun.position.set(
+                    Math.cos(angle) * radius, 
+                    Math.sin(angle) * radius + 10, 
+                    Math.sin(angle) * radius);
+                this.sunlight.position.copy(this.sun.position);
 
-                // Moon position (opposite side)
-            this.moon.position.set(
-                Math.cos(angle + Math.PI) * radius,
-                Math.sin(angle + Math.PI) * radius + 10,
-                Math.sin(angle + Math.PI) * radius
-            );
-            this.moonlight.position.copy(this.moon.position);
+                    // Moon position (opposite side)
+                this.moon.position.set(
+                    Math.cos(angle + Math.PI) * radius,
+                    Math.sin(angle + Math.PI) * radius + 10,
+                    Math.sin(angle + Math.PI) * radius
+                );
+                this.moonlight.position.copy(this.moon.position);
 
-            // Adjust sunlight intensity (brighter at peak, dim at night)
-            const normalizedHeight = (this.sun.position.y + radius) / (2 * radius); // Normalize between 0 and 1
-            this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
-            this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
+                // Adjust sunlight intensity (brighter at peak, dim at night)
+                const normalizedHeight = (this.sun.position.y + radius) / (2 * radius); // Normalize between 0 and 1
+                this.sunlight.intensity = Math.max(0.1, normalizedHeight * 1.5); // Prevent total darkness
+                this.ambientLight.intensity = Math.max(0.2, normalizedHeight); // Adjust ambient light
 
-            // Define color stops
-            const middayColor = new THREE.Color(0x87CEEB); // Sky blue
-            const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
-            const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
-            const nightColor = new THREE.Color(0x001082); // Deep night blue
+                // Define color stops
+                const middayColor = new THREE.Color(0x87CEEB); // Sky blue
+                const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
+                const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
+                const nightColor = new THREE.Color(0x001082); // Deep night blue
 
-            // Transition logic
-            let skyColor;
-            if (normalizedHeight > 0.7) {
-                // Daytime (Blue)
-                skyColor = middayColor;
-            } else if (normalizedHeight > 0.5) {
-                // Sunset (Blend from blue to orange)
-                skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.7 - normalizedHeight) / 0.2);
-            } else if (normalizedHeight > 0.35) {
-                // Late sunset (Blend from orange to pink)
-                skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.5 - normalizedHeight) / 0.15);
-            } else {
-                // Night (Blend from pink to deep blue) stronger blue
-                skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.35 - normalizedHeight) / 0.15);
+                // Transition logic
+                let skyColor;
+                if (normalizedHeight > 0.7) {
+                    // Daytime (Blue)
+                    skyColor = middayColor;
+                } else if (normalizedHeight > 0.5) {
+                    // Sunset (Blend from blue to orange)
+                    skyColor = new THREE.Color().lerpColors(middayColor, sunsetColor, (0.7 - normalizedHeight) / 0.2);
+                } else if (normalizedHeight > 0.35) {
+                    // Late sunset (Blend from orange to pink)
+                    skyColor = new THREE.Color().lerpColors(sunsetColor, pinkishColor, (0.5 - normalizedHeight) / 0.15);
+                } else {
+                    // Night (Blend from pink to deep blue) stronger blue
+                    skyColor = new THREE.Color().lerpColors(pinkishColor, nightColor, (0.35 - normalizedHeight) / 0.15);
+                }
+                this.scene.background = skyColor;
+
+
+                // Moonlight is strongest when the sun is at its lowest
+                this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
             }
-            this.scene.background = skyColor;
-
-
-            // Moonlight is strongest when the sun is at its lowest
-            this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
-
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
@@ -322,11 +353,11 @@ export class TestWorld {
         const rayOrigin = this.controls.getPosition();
 
         this.selectionRaycaster.set(rayOrigin, direction);
-        const intersects = this.selectionRaycaster.intersectObjects(this.cubes.map(cube => cube.mesh));
+        const intersects = this.selectionRaycaster.intersectObjects(this.physicsObjects.map(cube => cube.mesh));
 
         if (intersects.length > 0) {
             const mesh = intersects[0].object as THREE.Mesh;
-            const cube = this.cubes.find(c => c.mesh === mesh);
+            const cube = this.physicsObjects.find(c => c.mesh === mesh);
 
             if (cube && cube.body.mass >= 0 && this.highlightedObject !== cube) {
                 if (this.highlightedObject) {
