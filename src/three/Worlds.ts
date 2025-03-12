@@ -5,6 +5,7 @@ export abstract class BaseWorld {
     floorFrictionStatic: number;
     floorFrictionKinetic: number;
     density: number;
+    wind: { x: number; y: number, z: number };
     scene: THREE.Scene;
     hasFloor: boolean;
 
@@ -13,12 +14,14 @@ export abstract class BaseWorld {
         floorFrictionStatic: number,
         floorFrictionKinetic: number,
         density: number,
+        wind: { x: number; y: number, z: number },
         hasFloor: boolean,
     ) {
         this.gravity = gravity;
         this.floorFrictionStatic = floorFrictionStatic;
         this.floorFrictionKinetic = floorFrictionKinetic;
         this.density = density;
+        this.wind = wind;
         this.hasFloor = hasFloor;
         this.scene = new THREE.Scene();
 
@@ -30,7 +33,7 @@ export abstract class BaseWorld {
 
 export class EarthClearWorld extends BaseWorld {
     constructor() {
-        super(-9.8, 0.6, 0.4, 1.279, true);
+        super(-9.8, 0.6, 0.4, 1.279, {x: 2, y: 0, z: 3}, true);
     }
 
     setupEnvironment(): void {
@@ -49,7 +52,7 @@ export class EarthClearWorld extends BaseWorld {
 
 export class MoonWorld extends BaseWorld {
     constructor() {
-        super(-1.62, 0.3, 0.2, 0.003, true);
+        super(-1.62, 0.3, 0.2, 0.003, {x: 0, y: 0, z: 0}, true);
     }
 
     setupEnvironment(): void {
@@ -91,7 +94,7 @@ export class MoonWorld extends BaseWorld {
 
 export class SpaceWorld extends BaseWorld {
     constructor() {
-        super(0, 0, 0, 0, false); // No gravity, no friction, no density
+        super(0, 0, 0, 0.01, {x: 0, y: 0, z: 0}, false); // No gravity, no friction, no density
     }
 
     setupEnvironment(): void {

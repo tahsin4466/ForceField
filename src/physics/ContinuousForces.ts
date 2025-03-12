@@ -51,10 +51,29 @@ export class FrictionForce implements IForceGenerator {
     }
 }
 
+export class WindForce implements IForceGenerator {
+    private density: number;
+    private windVelocity: {x: number; y: number, z: number };
+    constructor(density: number, windVelocity: {x: number; y: number, z: number}) {
+        this.density = Math.abs(density);
+        this.windVelocity = windVelocity;
+    }
+    applyForce(body: RigidBody) {
+        if (this.density === 0) return;
+        let area = getCrossSectionArea(body);
+        const force = {
+            x: -0.5 * this.density * Math.pow(this.windVelocity.x, 2) * body.drag * area,
+            y: -0.5 * this.density * Math.pow(this.windVelocity.y, 2) * body.drag * area,
+            z: -0.5 * this.density * Math.pow(this.windVelocity.z, 2) * body.drag * area
+        }
+        body.applyForce(force);
+    }
+}
+
 export class DragForce implements IForceGenerator {
     private density: number;
-    constructor(fluidDensity: number) {
-        this.density = Math.abs(fluidDensity);
+    constructor(density: number) {
+        this.density = Math.abs(density);
     }
     applyForce(body: RigidBody) {
         if (this.density === 0) return;

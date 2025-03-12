@@ -54,11 +54,27 @@ export class ImpulseForce implements IExternalForceGenerator {
                 body.applyForce(force);
 
             } else {
+                //Compute the point on the object closest to the impulse location
+                const halfSize = {
+                    x: body.size.x / 2,
+                    y: body.size.y / 2,
+                    z: body.size.z / 2,
+                };
+                const minBound = {
+                    x: body.position.x - halfSize.x,
+                    y: body.position.y - halfSize.y,
+                    z: body.position.z - halfSize.z,
+                };
+                const maxBound = {
+                    x: body.position.x + halfSize.x,
+                    y: body.position.y + halfSize.y,
+                    z: body.position.z + halfSize.z,
+                };
                 // Normal force application at impact point (includes torque)
                 const impactPoint = {
-                    x: body.position.x + (Math.random() - 0.5) * body.size.x,
-                    y: body.position.y + (Math.random() - 0.5) * body.size.y,
-                    z: body.position.z + (Math.random() - 0.5) * body.size.z
+                    x: Math.max(minBound.x, Math.min(maxBound.x, this.position.x)),
+                    y: Math.max(minBound.y, Math.min(maxBound.y, this.position.y)),
+                    z: Math.max(minBound.z, Math.min(maxBound.z, this.position.z)),
                 };
 
                 // Apply force at impact point (allows torque)

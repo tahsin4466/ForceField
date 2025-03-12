@@ -3,7 +3,7 @@ import { FirstPersonControls } from './FirstPerson';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { RigidBody } from '../physics/RigidBody';
 import { Bomb } from './Bomb';
-import { GravityForce, FrictionForce, DragForce } from '../physics/ContinuousForces';
+import {GravityForce, FrictionForce, DragForce, WindForce} from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import {addWorldObjects} from "./Objects.ts";
 import { EarthClearWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
@@ -63,6 +63,7 @@ export class GameWorld {
         this.physicsWorld.addForceGenerator(new GravityForce(world.gravity));
         this.physicsWorld.addForceGenerator((new FrictionForce(world.floorFrictionStatic, world.floorFrictionStatic)))
         this.physicsWorld.addForceGenerator((new DragForce(world.density)))
+        this.physicsWorld.addForceGenerator((new WindForce(world.density, world.wind)))
 
         addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
@@ -273,7 +274,7 @@ export class GameWorld {
             // Adjust elapsed time by subtracting paused duration
             if (id <= 3) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-                const dayDuration = 15; // Total cycle time in seconds
+                const dayDuration = 240; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
