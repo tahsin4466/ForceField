@@ -13,9 +13,9 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
+
 //random world generator
-//let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
-let id: number = 2;
+let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
 
 
 let world = new EarthClearWorld();
@@ -79,7 +79,8 @@ export class GameWorld {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
-
+        this.renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(this.renderPass);
         this.physicsWorld = new PhysicsWorld(world.hasFloor);
 
         // Add forces
@@ -118,9 +119,6 @@ export class GameWorld {
             this.scene.add(this.sunlight);
 
             // Post-Processing (UnrealBloomPass)
-            this.renderPass = new RenderPass(this.scene, this.camera);
-            this.composer.addPass(this.renderPass);
-
             const bloomPass = new UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
                 0.6,  // Bloom intensity (Lower intensity for subtle glow)
@@ -146,7 +144,16 @@ export class GameWorld {
             this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             this.scene.add(this.ambientLight);
         }
-
+        if (id === 4 || id === 5) {
+            // Post-Processing (UnrealBloomPass)
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.6,  // Bloom intensity (Lower intensity for subtle glow)
+                0.6,  // Bloom radius (Increase for smoother glow)
+                0.6  // Bloom threshold (Filter out unwanted glow)
+            );
+            this.composer.addPass(bloomPass);
+        }
         if (id === 3){
             const rainGeometry = new THREE.BufferGeometry();
             const rainVertices: number[] = [];
@@ -171,6 +178,49 @@ export class GameWorld {
     
             this.rain = new THREE.Points(rainGeometry, rainMaterial);
             this.scene.add(this.rain);
+
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.8,  // Bloom intensity (Lower intensity for subtle glow)
+                0.4,  // Bloom radius (Increase for smoother glow)
+                0.85  // Bloom threshold (Filter out unwanted glow)
+            );
+            this.composer.addPass(bloomPass);
+
+            const lightning = new THREE.PointLight(0xffffff, 10, 0);
+            lightning.position.set(0, 30, 0);
+            this.scene.add(lightning);
+
+            function flashLightning() {
+                console.log("⚡ Lightning event triggered!");
+
+                const strikes = Math.floor(Math.random() * 2) + 1; // 1 to 4 flashes
+                let strikeCount = 0;
+
+                function strike() {
+                    lightning.position.set((Math.random()*20)-10, 30, (Math.random()*20)-10);
+                    if (strikeCount >= strikes) return; // Stop when flashes are done
+
+                    lightning.intensity = Math.random() * 5000; // Random brightness
+                    console.log(`⚡ Flash ${strikeCount + 1} of ${strikes}`);
+
+                    setTimeout(() => {
+                        lightning.intensity = 0; // Turn off lightning
+                        strikeCount++;
+
+                        // Add slight delay before the next strike in the sequence
+                        setTimeout(strike, Math.random() * 600 + 200); // 100-400ms delay
+                    }, Math.random() * 200 + 100); // Flash duration
+                }
+
+                strike(); // Start the first strike
+
+                // Schedule the next lightning event after 3 to 7 seconds
+                setTimeout(flashLightning, Math.random() * 4000 + 3000);
+            }
+
+            // Random lightning flashes every 3-7 seconds
+            setInterval(flashLightning, Math.random() * 4000 + 3000);
         }
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
@@ -341,7 +391,7 @@ export class GameWorld {
             // Adjust elapsed time by subtracting paused duration
             if (id <= 2 && this.sun && this.sunlight && this.moon && this.moonlight && this.ambientLight) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-                const dayDuration = 24; // Total cycle time in seconds
+                const dayDuration = 240; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
@@ -370,7 +420,7 @@ export class GameWorld {
                 const middayColor = new THREE.Color(0x87CEEB); // Sky blue
                 const sunsetColor = new THREE.Color(0xFF8C00); // Warm sunset orange
                 const pinkishColor = new THREE.Color(0xFF69B4); // Pink hue for late sunset
-                const nightColor = new THREE.Color(0x001082); // Deep night blue
+                const nightColor = new THREE.Color(0x000d66); // Deep night blue
 
                 // Transition logic
                 let skyColor;

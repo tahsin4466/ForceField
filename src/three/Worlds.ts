@@ -227,7 +227,7 @@ export class SpaceWorld extends BaseWorld {
         const sunGeometry = new THREE.SphereGeometry(sunSize, 64, 64);
         const sunMaterial = new THREE.MeshStandardMaterial({
             emissive: new THREE.Color(0x632907), // Bright orange
-            emissiveIntensity: 7, // Strong glow effect
+            emissiveIntensity: 15, // Strong glow effect
             color: 0xff5500, // Base color
         });
 
