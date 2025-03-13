@@ -91,7 +91,7 @@ export class EarthRainWorld extends BaseWorld {
         this.scene.add(directionalLight);
     
 
-        // ☁️ Add Rain Clouds
+        // Add Rain Clouds
         this.createRainClouds();
 
     }
