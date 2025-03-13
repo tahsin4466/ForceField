@@ -58,7 +58,7 @@ export class EarthClearWorld extends BaseWorld {
             );
         }
         starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+        const starMaterial = new THREE.PointsMaterial({ color: 0x999999 });
         const stars = new THREE.Points(starGeometry, starMaterial);
         this.scene.add(stars);
     }
@@ -98,14 +98,6 @@ export class EarthRainWorld extends BaseWorld {
 
         // Add Rain Clouds
         this.createRainClouds();
-
-        // Spotlight for god rays effect
-        const godRayLight = new THREE.SpotLight(0xEEEEAA, 1.5, 100, Math.PI / 6, 0.3, 1);
-        godRayLight.position.set(0, 30, 0); // High above the scene
-        godRayLight.target.position.set(0, 0, 0); // Pointing downward to the ground
-        godRayLight.castShadow = true;
-        this.scene.add(godRayLight);
-        this.scene.add(godRayLight.target);
 
     }
 

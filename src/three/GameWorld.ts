@@ -7,9 +7,15 @@ import {GravityForce, FrictionForce, DragForce, WindForce} from '../physics/Cont
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import {addWorldObjects} from "./Objects.ts";
 import { EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 //random world generator
-let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+//let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
+let id: number = 2;
 
 
 let world = new EarthClearWorld();
@@ -43,7 +49,9 @@ export class GameWorld {
     private forceArrow: THREE.ArrowHelper | null = null;
     forceMagnitude: number = 3;
     pickupDistance: number = 0;
-    
+
+    composer: EffectComposer | null = null;
+    renderPass: RenderPass | null = null;
     sun: THREE.Mesh | null = null;
     sunlight: THREE.DirectionalLight | null = null;
     ambientLight: THREE.AmbientLight | null = null;
@@ -59,8 +67,15 @@ export class GameWorld {
         this.scene = world.scene;
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
-
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+        const fxaaPass = new ShaderPass(FXAAShader);
+        fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+        this.composer.addPass(fxaaPass);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.toneMapping = THREE.ReinhardToneMapping;
+        this.renderer.toneMappingExposure = 1.2;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(this.renderer.domElement);
@@ -79,7 +94,11 @@ export class GameWorld {
             //the sun and lighting
             // Create the sun (a sphere)
             const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
-            const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+            const sunMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFFFBC,
+                emissive: 0xFFFFBC,
+                emissiveIntensity: 5
+            });
             this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
             this.sun.position.set(20, 30, -10); // Position it in the sky
             this.scene.add(this.sun);
@@ -98,9 +117,24 @@ export class GameWorld {
             this.sunlight.shadow.camera.bottom = -50;
             this.scene.add(this.sunlight);
 
+            // Post-Processing (UnrealBloomPass)
+            this.renderPass = new RenderPass(this.scene, this.camera);
+            this.composer.addPass(this.renderPass);
+
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.6,  // Bloom intensity (Lower intensity for subtle glow)
+                0.6,  // Bloom radius (Increase for smoother glow)
+                0.6  // Bloom threshold (Filter out unwanted glow)
+            );
+            this.composer.addPass(bloomPass);
+
             // Create the moon (a sphere)
             const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32);
-            const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+            const moonMaterial = new THREE.MeshStandardMaterial({
+                color: 0xaaaaaa,
+                emissive: 0xaaaaaa,
+                emissiveIntensity: 3 });
             this.moon = new THREE.Mesh(moonGeometry, moonMaterial);
             this.moon.position.set(-20, -30, 10); // Opposite initial position
             this.scene.add(this.moon);
@@ -259,7 +293,6 @@ export class GameWorld {
 
     animate() {
         requestAnimationFrame(() => this.animate());
-
         let deltaTime = this.clock.getDelta();
         deltaTime = Math.min(deltaTime, 0.008);
 
@@ -308,7 +341,7 @@ export class GameWorld {
             // Adjust elapsed time by subtracting paused duration
             if (id <= 2 && this.sun && this.sunlight && this.moon && this.moonlight && this.ambientLight) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
-                const dayDuration = 240; // Total cycle time in seconds
+                const dayDuration = 24; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
 
 
@@ -379,7 +412,7 @@ export class GameWorld {
             }
         }
         this.controls.update(deltaTime)
-        this.renderer.render(this.scene, this.camera);
+        if (this.composer) this.composer.render();
     }
 
     highlightObject() {
