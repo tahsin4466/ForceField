@@ -40,7 +40,7 @@ export class EarthClearWorld extends BaseWorld {
         // Blue sky
         this.scene.background = new THREE.Color(0x87CEEB);
 
-        const floorGeometry = new THREE.PlaneGeometry(50, 50);
+        const floorGeometry = new THREE.PlaneGeometry(200, 200);
         const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
@@ -65,9 +65,6 @@ export class EarthClearWorld extends BaseWorld {
 }
 
 export class EarthRainWorld extends BaseWorld {
-    private rain!: THREE.Points;
-    private rainVelocity: number = -0.2;
-
     constructor() {
         super(-9.8, 0.5, 0.3, 1.279, {x: 2, y: 0, z: 3}, true);
     }
@@ -76,7 +73,7 @@ export class EarthRainWorld extends BaseWorld {
         // gray, overcast sky
         this.scene.background = new THREE.Color(0x6E6E6E);
 
-        const floorGeometry = new THREE.PlaneGeometry(50, 50);
+        const floorGeometry = new THREE.PlaneGeometry(200, 200);
         const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x2F4F2F }); // Darker green for wet grass
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
@@ -128,28 +125,6 @@ export class EarthRainWorld extends BaseWorld {
         }
     }
 
-
-
-    update(): void {
-        //tester code
-        if (!this.rain) {
-            console.error("Rain particles are not initialized!");
-            return; // Early exit if rain particles are not initialized
-        }
-        if (this.rain) {
-            const positions = this.rain.geometry.attributes.position.array as Float32Array;
-
-            for (let i = 1; i < positions.length; i += 3) {
-                positions[i] += this.rainVelocity; // Move downward
-
-                if (positions[i] < 0) {
-                    positions[i] = Math.random() * 50 + 10; // Reset raindrop to the top
-                }
-            }
-
-            this.rain.geometry.attributes.position.needsUpdate = true;
-        }
-    }
 
 
 }
@@ -205,7 +180,7 @@ export class SpaceWorld extends BaseWorld {
     setupEnvironment(): void {
         this.scene.background = new THREE.Color(0x000000); // Black space
 
-        // 🌠 Add Floating Stars
+        // Add Floating Stars
         const starGeometry = new THREE.BufferGeometry();
         const starVertices = [];
         for (let i = 0; i < 500; i++) { // More stars for a better effect
@@ -220,7 +195,7 @@ export class SpaceWorld extends BaseWorld {
         const stars = new THREE.Points(starGeometry, starMaterial);
         this.scene.add(stars);
 
-        // 🌞 Add the Sun (Closer but Smaller)
+        // Add the Sun (Closer but Smaller)
         const sunSize = 300; // Smaller sun, but closer
         const sunDistance = 5; // Moved closer for visibility
 

@@ -6,29 +6,13 @@ import { Bomb } from './Bomb';
 import {GravityForce, FrictionForce, DragForce, WindForce} from '../physics/ContinuousForces';
 import { ExplosionForce, CursorForce } from "../physics/ImpulseForces"
 import {addWorldObjects} from "./Objects.ts";
-import { EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
+import { BaseWorld, EarthClearWorld, EarthRainWorld, MoonWorld, SpaceWorld} from "./Worlds.ts";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
-
-//random world generator
-let id: number = Math.floor(Math.random() * (Math.floor(6) - Math.ceil(1)) + Math.ceil(1));
-
-
-let world = new EarthClearWorld();
-switch (id) {
-    case 3:
-        world = new EarthRainWorld();
-        break;
-    case 4:
-        world = new MoonWorld();
-        break;
-    case 5:
-        world = new SpaceWorld();
-}
 
 export class GameWorld {
     scene: THREE.Scene;
@@ -60,11 +44,27 @@ export class GameWorld {
     pausedTime: number = 0;  // Total time spent paused
     pauseStart: number | null = null; // Time when pause started
     rain: THREE.Points | null = null;
-    rainVelocity: number = -0.2; // Define a constant speed for the rain
+    rainVelocity: number = -0.2;
+    world: BaseWorld | null = null;
+    id: number;
 
 
-    constructor() {
-        this.scene = world.scene;
+    constructor(id: number) {
+        this.id = id;
+        switch (id) {
+            case 3:
+                this.world = new EarthRainWorld();
+                break;
+            case 4:
+                this.world = new MoonWorld();
+                break;
+            case 5:
+                this.world = new SpaceWorld();
+                break;
+            default:
+                this.world = new EarthClearWorld();
+        }
+        this.scene = this.world.scene;
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.composer = new EffectComposer(this.renderer);
@@ -81,13 +81,13 @@ export class GameWorld {
         document.body.appendChild(this.renderer.domElement);
         this.renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(this.renderPass);
-        this.physicsWorld = new PhysicsWorld(world.hasFloor);
+        this.physicsWorld = new PhysicsWorld(this.world.hasFloor);
 
         // Add forces
-        this.physicsWorld.addForceGenerator(new GravityForce(world.gravity));
-        this.physicsWorld.addForceGenerator((new FrictionForce(world.floorFrictionStatic, world.floorFrictionStatic)))
-        this.physicsWorld.addForceGenerator((new DragForce(world.density)))
-        this.physicsWorld.addForceGenerator((new WindForce(world.density, world.wind)))
+        this.physicsWorld.addForceGenerator(new GravityForce(this.world.gravity));
+        this.physicsWorld.addForceGenerator((new FrictionForce(this.world.floorFrictionStatic, this.world.floorFrictionStatic)))
+        this.physicsWorld.addForceGenerator((new DragForce(this.world.density)))
+        this.physicsWorld.addForceGenerator((new WindForce(this.world.density, this.world.wind)))
 
         addWorldObjects(id, this.scene, this.physicsWorld, this.physicsObjects);
 
@@ -389,7 +389,7 @@ export class GameWorld {
           
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
-            if (id <= 2 && this.sun && this.sunlight && this.moon && this.moonlight && this.ambientLight) {
+            if (this.id <= 2 && this.sun && this.sunlight && this.moon && this.moonlight && this.ambientLight) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
                 const dayDuration = 240; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
@@ -443,13 +443,13 @@ export class GameWorld {
                 // Moonlight is strongest when the sun is at its lowest
                 this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
             }
-            if (id === 3 && this.rain){//code to animate the rain world
+            if (this.id === 3 && this.rain && this.world?.wind){//code to animate the rain world
                 const positions = this.rain.geometry.attributes.position.array as Float32Array;
 
                 for (let i = 0; i < positions.length; i += 3) {
-                    positions[i] += world.wind.x*-0.02040816; // Move in wind's X direction
+                    positions[i] += this.world.wind.x*-0.02040816; // Move in wind's X direction
                     positions[i + 1] += this.rainVelocity; // Move downward
-                    positions[i + 2] += world.wind.z*-0.02040816; // Move in wind's Z direction
+                    positions[i + 2] += this.world.wind.z*-0.02040816; // Move in wind's Z direction
 
                     // Reset raindrop when it reaches the bottom
                     if (positions[i + 1] < 0) {
