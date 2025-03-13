@@ -21,8 +21,8 @@ export class Bomb {
 
     detonate(scene: THREE.Scene, onDetonate: (position: THREE.Vector3, forceMagnitude: number, radius: number, color: number) => void) {
         // More realistic explosion values
-        const explosionForce = this.big ? 4000 : 1250; // Larger explosions have more force
-        const explosionRadius = this.big ? 13 : 4; // Bigger bombs affect a wider area
+        const explosionForce = this.big ? 15000 : 3000; // Larger explosions have more force
+        const explosionRadius = this.big ? 30 : 10; // Bigger bombs affect a wider area
         const explosionColor = this.big ? 0xffa500 : 0xff4444; // More intense red-orange for large explosions
 
         // Delegate explosion logic to `GameWorld`

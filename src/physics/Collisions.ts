@@ -159,7 +159,6 @@ function resolveGroundCollision(obj: RigidBody) {
                 y: -obj.velocity.y * obj.bounciness,
                 z: obj.velocity.z * obj.bounciness,
             };
-
             obj.velocity.x = impulse.x;
             obj.velocity.y = impulse.y;
             obj.velocity.z = impulse.z;

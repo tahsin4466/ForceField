@@ -65,9 +65,9 @@ export class RigidBody {
 
         // Compute torque using cross-product (r × F)
         const torque = {
-            x: r.y * force.z - r.z * force.y,
-            y: r.z * force.x - r.x * force.z,
-            z: r.x * force.y - r.y * force.x
+            x: r.y * force.z - r.z * force.y * (0.25/this.drag),
+            y: r.z * force.x - r.x * force.z * (0.25/this.drag),
+            z: r.x * force.y - r.y * force.x * (0.25/this.drag)
         };
 
         // Apply torque

@@ -33,7 +33,7 @@ export abstract class BaseWorld {
 
 export class EarthClearWorld extends BaseWorld {
     constructor() {
-        super(-9.8, 0.6, 0.4, 1.279, {x: 2, y: 0, z: 3}, true);
+        super(-9.8, 0.6, 0.4, 1.279, {x: 0, y: 0, z: 0}, true);
     }
 
     setupEnvironment(): void {
@@ -66,10 +66,10 @@ export class EarthClearWorld extends BaseWorld {
 
 export class EarthRainWorld extends BaseWorld {
     private rain!: THREE.Points;
-    private rainVelocity: number = -0.2; // Rain falling speed
+    private rainVelocity: number = -0.2;
 
     constructor() {
-        super(-9.8, 0.8, 0.6, 1.279, true);
+        super(-9.8, 0.5, 0.3, 1.279, {x: 2, y: 0, z: 3}, true);
     }
 
     setupEnvironment(): void {
@@ -87,15 +87,25 @@ export class EarthRainWorld extends BaseWorld {
         const ambientLight = new THREE.AmbientLight(0x555555, 0.5); // Lower intensity, grayish
         this.scene.add(ambientLight);
 
+        //fog
+        this.scene.fog = new THREE.FogExp2(0x666666, 0.06);
+
         // Directional light for soft overcast effect
         const directionalLight = new THREE.DirectionalLight(0xAAAAAA, 0.7);
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         this.scene.add(directionalLight);
-    
 
         // Add Rain Clouds
         this.createRainClouds();
+
+        // Spotlight for god rays effect
+        const godRayLight = new THREE.SpotLight(0xEEEEAA, 1.5, 100, Math.PI / 6, 0.3, 1);
+        godRayLight.position.set(0, 30, 0); // High above the scene
+        godRayLight.target.position.set(0, 0, 0); // Pointing downward to the ground
+        godRayLight.castShadow = true;
+        this.scene.add(godRayLight);
+        this.scene.add(godRayLight.target);
 
     }
 

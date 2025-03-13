@@ -114,9 +114,6 @@ export class GameWorld {
         }
 
         if (id === 3){
-            console.log("Creating rain particles...");
-            
-
             const rainGeometry = new THREE.BufferGeometry();
             const rainVertices: number[] = [];
             const rainCount = 1000; // Number of rain drops
@@ -140,7 +137,6 @@ export class GameWorld {
     
             this.rain = new THREE.Points(rainGeometry, rainMaterial);
             this.scene.add(this.rain);
-            console.log("Rain particles created:", this.rain);
         }
 
         this.controls = new FirstPersonControls(this.camera, this.scene);
@@ -310,7 +306,7 @@ export class GameWorld {
           
             // Day-Night Cycle
             // Adjust elapsed time by subtracting paused duration
-            if (id <= 2) {
+            if (id <= 2 && this.sun && this.sunlight && this.moon && this.moonlight && this.ambientLight) {
                 const adjustedTime = this.clock.getElapsedTime() - this.pausedTime;
                 const dayDuration = 240; // Total cycle time in seconds
                 const angle = (adjustedTime % dayDuration) / dayDuration * Math.PI * 2;
@@ -364,24 +360,23 @@ export class GameWorld {
                 // Moonlight is strongest when the sun is at its lowest
                 this.moonlight.intensity = Math.max(0.01, (1 - normalizedHeight) * 0.3); // Max of 0.1 at night
             }
-            if (id === 3){//code to animate the rain world
-                if (!this.rain) {
-                    console.error("Rain particles are not initialized!");
-                    return; // Early exit if rain particles are not initialized
-                }
-                if (this.rain) {
-                    const positions = this.rain.geometry.attributes.position.array as Float32Array;
-        
-                    for (let i = 1; i < positions.length; i += 3) {
-                        positions[i] += this.rainVelocity; // Move downward
-        
-                        if (positions[i] < 0) {
-                            positions[i] = Math.random() * 50 + 10; // Reset raindrop to the top
-                        }
+            if (id === 3 && this.rain){//code to animate the rain world
+                const positions = this.rain.geometry.attributes.position.array as Float32Array;
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += world.wind.x*-0.02040816; // Move in wind's X direction
+                    positions[i + 1] += this.rainVelocity; // Move downward
+                    positions[i + 2] += world.wind.z*-0.02040816; // Move in wind's Z direction
+
+                    // Reset raindrop when it reaches the bottom
+                    if (positions[i + 1] < 0) {
+                        positions[i] = (Math.random() - 0.5) * 200; // Random X position
+                        positions[i + 1] = Math.random() * 50 + 10; // Reset to the top
+                        positions[i + 2] = (Math.random() - 0.5) * 200; // Random Z position
                     }
-        
-                    this.rain.geometry.attributes.position.needsUpdate = true;
-                }            }
+                }
+                this.rain.geometry.attributes.position.needsUpdate = true;
+            }
         }
         this.controls.update(deltaTime)
         this.renderer.render(this.scene, this.camera);
