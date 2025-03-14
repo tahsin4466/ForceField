@@ -350,6 +350,7 @@ const moonObjects: WorldObject[] = [
         name: "Small Moon Rock",
         color: 0x777777, // Gray
         position: { x: -3, y: 1, z: 2 },
+        texture: "rock.jpg",
         mass: 5, // Dense rock
         size: { x: 0.5, y: 0.5, z: 0.5 },
         staticFriction: 0.9,
@@ -362,6 +363,7 @@ const moonObjects: WorldObject[] = [
         name: "Medium Moon Rock",
         color: 0x666666, // Dark Gray
         position: { x: 5, y: 1, z: -4 },
+        texture: "rock2.jpg",
         mass: 12,
         size: { x: 1.2, y: 1, z: 1.3 },
         staticFriction: 0.95,
@@ -374,6 +376,7 @@ const moonObjects: WorldObject[] = [
         name: "Large Moon Boulder",
         color: 0x555555, // Darker rock
         position: { x: -8, y: 2, z: 5 },
+        texture: "rock3.jpg",
         mass: 30,
         size: { x: 3, y: 2.5, z: 3 },
         staticFriction: 0.98,
@@ -400,6 +403,7 @@ const moonObjects: WorldObject[] = [
         name: "Small Moon Cheese Block",
         color: 0xffee88, // Yellowish
         position: { x: -4, y: 2, z: -2 },
+        texture: "cheese.jpg",
         mass: 0.8, // Low density
         size: { x: 0.6, y: 0.6, z: 0.6 },
         staticFriction: 0.4,
@@ -412,6 +416,7 @@ const moonObjects: WorldObject[] = [
         name: "Moon Cheese Wedge",
         color: 0xffdd66, // Slightly darker yellow
         position: { x: 6, y: 2, z: -6 },
+        texture: "cheese.jpg",
         mass: 1.2,
         size: { x: 1, y: 0.5, z: 1.2 },
         staticFriction: 0.45,
@@ -443,7 +448,41 @@ const moonObjects: WorldObject[] = [
         bounciness: 0.95, // Highest bounce
         inertia: { xx: 0.2, yy: 0.2, zz: 0.2 },
         drag: 1.3
-    }
+    },
+    {
+        name: "Moon Flag Pole",
+        color: 0xaaaaaa, // Metal pole
+        texture: "metal.jpg",
+        position: {
+            x: -10.75, 
+            y: 1,     
+            z: 5     
+        },
+        mass: -1, // Static
+        size: { x: 0.1, y: 2, z: 0.1 }, // Thin vertical pole
+        staticFriction: 0.6,
+        kineticFriction: 0.5,
+        bounciness: 0.1,
+        inertia: { xx: 0.3, yy: 0.3, zz: 0.3 },
+        drag: 1.2
+    },
+    {
+        name: "Moon Flag Cloth",
+        color: 0xffffff, 
+        texture: "flag.jpg", 
+        position: {
+            x: -9.9,  
+            y: 2,   
+            z: 5
+        },
+        mass: -1, // Static
+        size: { x: 1.5, y: 1, z: 0.1 },
+        staticFriction: 0.6,
+        kineticFriction: 0.5,
+        bounciness: 0.1,
+        inertia: { xx: 0.3, yy: 0.3, zz: 0.3 },
+        drag: 1.2
+    },
 ];
 //House of Cards
 const numLevels = 3;
@@ -660,7 +699,7 @@ export function addWorldObjects(
             objectBlueprint = earthObjects;
     }
     const textureLoader = new THREE.TextureLoader();
-    objectBlueprint.forEach(({ color, texture, size, position, mass, staticFriction, kineticFriction, bounciness, inertia, drag }) => {
+    objectBlueprint.forEach(({ name, color, texture, size, position, mass, staticFriction, kineticFriction, bounciness, inertia, drag }) => {
         // Create mesh
         const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
 
@@ -669,10 +708,15 @@ export function addWorldObjects(
             // Load the texture
             const loadedTexture = textureLoader.load(`/textures/${texture}`);
 
-            //Texture tiling
-            loadedTexture.wrapS = THREE.RepeatWrapping; // Horizontal Tile
-            loadedTexture.wrapT = THREE.RepeatWrapping; // Vertical Tile
-            loadedTexture.repeat.set(2, 2); // Scale
+            if (name.includes("Flag")) {
+                loadedTexture.wrapS = THREE.ClampToEdgeWrapping; // No horizontal tiling
+                loadedTexture.wrapT = THREE.ClampToEdgeWrapping; // No vertical tiling
+                loadedTexture.repeat.set(1, 1); // Stretch texture across the flag
+            } else {
+                loadedTexture.wrapS = THREE.RepeatWrapping;
+                loadedTexture.wrapT = THREE.RepeatWrapping;
+                loadedTexture.repeat.set(2, 2); // Keep tiling for other objects
+            }
 
             material = new THREE.MeshPhongMaterial({
                 map: loadedTexture,  // Apply texture
