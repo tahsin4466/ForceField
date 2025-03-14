@@ -17,7 +17,7 @@ export class ImpulseForce implements IExternalForceGenerator {
         this.position = position;
         this.forceMagnitude = forceMagnitude;
         this.radius = radius;
-        this.decayFunction = decayFunction || ((d, r) => Math.exp(-d / r)); // Default: exponential decay
+        this.decayFunction = decayFunction || ((d, r) => Math.exp(-d / r)); // Default to inverse r
     }
 
     applyImpulse(body: RigidBody) {
@@ -35,7 +35,6 @@ export class ImpulseForce implements IExternalForceGenerator {
                 z: dz / Math.max(distance, 0.01),
             };
 
-            // Impulse scales with falloff but applies even beyond radius
             const impulse = this.forceMagnitude * falloff * (1 / (body.mass + 1));
 
             const force = {
@@ -44,10 +43,10 @@ export class ImpulseForce implements IExternalForceGenerator {
                 z: direction.z * impulse
             };
 
-            // Check if object is resting on the ground
+            //Check if object is resting on the ground
             const isOnGround = body.position.y-(body.size.y/2) <= 0.01 && body.rotation.pitch <= 0.1 && body.rotation.roll <= 0.1;
             if (isOnGround) {
-                // Apply only linear motion (no torque/rotation)
+                //Apply only linear motion
                 if (force.y < 0) {
                     force.y = 0;
                 }
@@ -70,14 +69,13 @@ export class ImpulseForce implements IExternalForceGenerator {
                     y: body.position.y + halfSize.y,
                     z: body.position.z + halfSize.z,
                 };
-                // Normal force application at impact point (includes torque)
+                //Point force application
                 const impactPoint = {
                     x: Math.max(minBound.x, Math.min(maxBound.x, this.position.x)),
                     y: Math.max(minBound.y, Math.min(maxBound.y, this.position.y)),
                     z: Math.max(minBound.z, Math.min(maxBound.z, this.position.z)),
                 };
 
-                // Apply force at impact point (allows torque)
                 body.applyForceAtPoint(force, impactPoint);
             }
         }
@@ -86,7 +84,7 @@ export class ImpulseForce implements IExternalForceGenerator {
 
 export class ExplosionForce extends ImpulseForce {
     constructor(position: { x: number; y: number; z: number }, forceMagnitude: number, radius: number) {
-        super(position, forceMagnitude, radius, (d, r) => Math.exp(-d / r)); // Exponential decay for realism
+        super(position, forceMagnitude, radius, (d, r) => Math.exp(-d / r));
     }
 }
 

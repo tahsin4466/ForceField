@@ -7,6 +7,6 @@ function loadGameWorld(worldNumber: number) {
 // Wait for user input (1-5)
 window.addEventListener("keydown", (event) => {
     if (event.key >= "1" && event.key <= "5") {
-        loadGameWorld(parseInt(event.key)); // Convert key to number
+        loadGameWorld(parseInt(event.key));
     }
 });

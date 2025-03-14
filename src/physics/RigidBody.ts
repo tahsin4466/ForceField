@@ -32,7 +32,7 @@ export class RigidBody {
         this.drag = drag;
     }
 
-    // Get bounding box (min and max coordinates)
+    //Min max for bounding boxes
     get min() {
         return {
             x: this.position.x - this.size.x / 2,
@@ -40,7 +40,6 @@ export class RigidBody {
             z: this.position.z - this.size.z / 2,
         };
     }
-
     get max() {
         return {
             x: this.position.x + this.size.x / 2,
@@ -49,33 +48,30 @@ export class RigidBody {
         };
     }
 
+    //Center and point force applicaiton
     applyForce(force: { x: number, y: number, z: number }) {
         this.acceleration.x += force.x / this.mass;
         this.acceleration.y += force.y / this.mass;
         this.acceleration.z += force.z / this.mass;
     }
-
     applyForceAtPoint(force: { x: number, y: number, z: number }, point: { x: number, y: number, z: number }) {
-        // Calculate lever arm (distance from center of mass)
+        // Get lever arm from COM
         const r = {
             x: point.x - this.position.x,
             y: point.y - this.position.y,
             z: point.z - this.position.z
         };
-
-        // Compute torque using cross-product (r × F)
+        //rxF torque calc
         const torque = {
             x: r.y * force.z - r.z * force.y * (0.25/this.drag),
             y: r.z * force.x - r.x * force.z * (0.25/this.drag),
             z: r.x * force.y - r.y * force.x * (0.25/this.drag)
         };
-
-        // Apply torque
         this.torque.x += torque.x;
         this.torque.y += torque.y;
         this.torque.z += torque.z;
 
-        // Also apply the linear force
+        //Also apply the linear force
         this.applyForce(force);
     }
 
@@ -83,11 +79,9 @@ export class RigidBody {
         this.velocity.x += this.acceleration.x * deltaTime;
         this.velocity.y += this.acceleration.y * deltaTime;
         this.velocity.z += this.acceleration.z * deltaTime;
-
         this.position.x += this.velocity.x * deltaTime;
         this.position.y += this.velocity.y * deltaTime;
         this.position.z += this.velocity.z * deltaTime;
-
         this.acceleration = { x: 0, y: 0, z: 0 };
     }
 
@@ -98,14 +92,10 @@ export class RigidBody {
     }
 
     updateRotation(deltaTime: number) {
-        const dampingFactor = 0.98; // Reduce rotation over time
-
-        // Compute angular acceleration from torque
+        const dampingFactor = 0.98;
         this.angularAcceleration.x = this.torque.x / this.mass;
         this.angularAcceleration.y = this.torque.y / this.mass;
         this.angularAcceleration.z = this.torque.z / this.mass;
-
-        // Apply angular acceleration to angular velocity
         this.angularVelocity.x += this.angularAcceleration.x * deltaTime;
         this.angularVelocity.y += this.angularAcceleration.y * deltaTime;
         this.angularVelocity.z += this.angularAcceleration.z * deltaTime;
@@ -115,26 +105,23 @@ export class RigidBody {
         this.angularVelocity.y *= dampingFactor;
         this.angularVelocity.z *= dampingFactor;
 
-        // Update Euler angles (in degrees)
-        this.rotation.pitch += this.angularVelocity.x * deltaTime * 57.2958; // Convert radians to degrees
+        // Update Euler angles
+        this.rotation.pitch += this.angularVelocity.x * deltaTime * 57.2958;
         this.rotation.yaw += this.angularVelocity.y * deltaTime * 57.2958;
         this.rotation.roll += this.angularVelocity.z * deltaTime * 57.2958;
 
-        // If the object is at rest, snap rotation to the nearest axis
+        // If the object is at rest snap rotation to the nearest axis
         const angularSpeed = Math.sqrt(
             this.angularVelocity.x ** 2 +
             this.angularVelocity.y ** 2 +
             this.angularVelocity.z ** 2
         );
-
-        if (angularSpeed < 0.001) { // Threshold to consider "at rest"
-            // Fully stop any residual angular velocity
+        if (angularSpeed < 0.001) {
+            //Fully stop any residual angular velocity
             this.angularVelocity = { x: 0, y: 0, z: 0 };
             this.angularAcceleration = { x: 0, y: 0, z: 0 };
             this.torque = { x: 0, y: 0, z: 0 };
         }
-
-        // Clear torque for next frame
         this.torque = { x: 0, y: 0, z: 0 };
     }
 

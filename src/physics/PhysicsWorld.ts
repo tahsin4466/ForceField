@@ -25,7 +25,7 @@ export class PhysicsWorld {
     }
 
     update(deltaTime: number) {
-        // Apply continuous forces (gravity, friction, etc.)
+        //Apply Continous forces
         this.objects.forEach(obj => {
             if (obj.mass > 0) {
                 this.forceGenerators.forEach(force => {
@@ -34,7 +34,7 @@ export class PhysicsWorld {
             }
         });
 
-        // Apply impulse forces
+        //Apply impulse forces
         this.externalForces.forEach(force => {
             this.objects.forEach(obj => {
                 if (obj.mass > 0) {
@@ -44,10 +44,10 @@ export class PhysicsWorld {
         });
         this.externalForces = [];
 
-        // Resolve collisions
+        //Resolve collisions
         handleCollisions(this.objects, this.hasFloor);
 
-        // Update object positions and rotations
+        //Update object positions and rotations
         this.objects.forEach(obj => {
             if (obj.mass > 0) {
                 obj.update(deltaTime);

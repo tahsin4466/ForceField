@@ -23,27 +23,21 @@ export class FrictionForce implements IForceGenerator {
     }
 
     applyForce(body: RigidBody, deltaTime: number) {
-        if (body.position.y <= body.size.y / 2) { // Apply only if touching ground
+        if (body.position.y <= body.size.y / 2) {
             const velocityMagnitude = Math.sqrt(body.velocity.x ** 2 + body.velocity.z ** 2);
-
-            // Use either object friction or default world friction
             const bodyStaticFriction = body.staticFriction || this.staticFriction;
             const bodyKineticFriction = body.kineticFriction || this.kineticFriction;
-
-            // Smooth Static Friction
             if (velocityMagnitude < bodyStaticFriction * 3) {
                 body.velocity.x = 0;
                 body.velocity.z = 0;
             } else {
-                // Softer Kinetic Friction (not too aggressive)
                 const frictionStrength = bodyKineticFriction * 6 * body.mass * deltaTime;
                 const frictionX = (body.velocity.x / velocityMagnitude) * frictionStrength;
                 const frictionZ = (body.velocity.z / velocityMagnitude) * frictionStrength;
-
                 body.velocity.x -= frictionX;
                 body.velocity.z -= frictionZ;
 
-                // Prevent overshooting (avoids tiny unwanted movement)
+                //Prevent overshooting
                 if (Math.abs(body.velocity.x) < 0.02) body.velocity.x = 0;
                 if (Math.abs(body.velocity.z) < 0.02) body.velocity.z = 0;
             }
@@ -88,17 +82,17 @@ export class DragForce implements IForceGenerator {
 }
 
 function getCrossSectionArea(body: RigidBody) {
-    // Convert to Three.js vectors
+    //Convert to Three vectors
     const pos = new THREE.Vector3(body.position.x, body.position.y, body.position.z);
     const vel = new THREE.Vector3(body.velocity.x, body.velocity.y, body.velocity.z).normalize();
     const halfSize = new THREE.Vector3(body.size.x / 2, body.size.y / 2, body.size.z / 2);
 
-    // Convert rotation to a Three.js Euler and Matrix4 for transformation
+    // Convert rotation to Matrix4
     const euler = new THREE.Euler(body.rotation.pitch, body.rotation.yaw, body.rotation.roll, "XYZ");
     const rotationMatrix = new THREE.Matrix4();
     rotationMatrix.makeRotationFromEuler(euler);
 
-    // Define the 8 local-space vertices of a cuboid centered at the origin
+    // Get 8 vertices in local space
     const localVertices = [
         new THREE.Vector3(-halfSize.x, -halfSize.y, -halfSize.z),
         new THREE.Vector3(-halfSize.x, -halfSize.y,  halfSize.z),
@@ -110,18 +104,18 @@ function getCrossSectionArea(body: RigidBody) {
         new THREE.Vector3( halfSize.x,  halfSize.y,  halfSize.z),
     ];
 
-    // Transform vertices into world space
+    // World space transofmration
     const worldVertices = localVertices.map(vertex => {
         return vertex.clone().applyMatrix4(rotationMatrix).add(pos);
     });
 
-    // Find the best-fitting 2D projection plane perpendicular to velocity
+    //2D perpendicular projection to plane
     const planeNormal = vel.clone();
     const basisX = new THREE.Vector3();
     const basisY = new THREE.Vector3();
     planeNormal.normalize();
 
-    // Generate an orthonormal basis for the plane
+    //Orthonormal basis
     if (Math.abs(planeNormal.x) > Math.abs(planeNormal.z)) {
         basisX.set(-planeNormal.y, planeNormal.x, 0);
     } else {
@@ -130,32 +124,27 @@ function getCrossSectionArea(body: RigidBody) {
     basisX.normalize();
     basisY.crossVectors(planeNormal, basisX);
 
-    // Project vertices onto the 2D plane
+    //Project vertices onto the 2D plane
     const projectedPoints: THREE.Vector2[] = worldVertices.map(vertex => {
         return new THREE.Vector2(vertex.dot(basisX), vertex.dot(basisY));
     });
 
-    // Compute convex hull area of the projected points
-    return computeConvexHullArea(projectedPoints);
+    //Compute area of points
+    return computeConvexArea(projectedPoints);
 }
 
-function computeConvexHullArea(points: THREE.Vector2[]): number {
+function computeConvexArea(points: THREE.Vector2[]): number {
     if (points.length < 3) return 0;
-
-    // Compute convex hull using Andrew's monotone chain algorithm
     points.sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
     const hull: THREE.Vector2[] = [];
-
     const cross = (o: THREE.Vector2, a: THREE.Vector2, b: THREE.Vector2) =>
         (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-
     for (let i = 0; i < points.length; i++) {
         while (hull.length >= 2 && cross(hull[hull.length - 2], hull[hull.length - 1], points[i]) <= 0) {
             hull.pop();
         }
         hull.push(points[i]);
     }
-
     const lowerSize = hull.length;
     for (let i = points.length - 2; i >= 0; i--) {
         while (hull.length > lowerSize && cross(hull[hull.length - 2], hull[hull.length - 1], points[i]) <= 0) {
@@ -163,14 +152,11 @@ function computeConvexHullArea(points: THREE.Vector2[]): number {
         }
         hull.push(points[i]);
     }
-    hull.pop(); // Remove last repeated point
-
-    // Compute the area using the shoelace formula
+    hull.pop();
     let area = 0;
     for (let i = 0; i < hull.length; i++) {
         const j = (i + 1) % hull.length;
         area += hull[i].x * hull[j].y - hull[j].x * hull[i].y;
     }
-
     return Math.abs(area) / 2;
 }

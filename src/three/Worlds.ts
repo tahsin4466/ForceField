@@ -47,7 +47,7 @@ export class EarthClearWorld extends BaseWorld {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // Add floating stars
+        //floating stars
         const starGeometry = new THREE.BufferGeometry();
         const starVertices = [];
         for (let i = 0; i < 200; i++) {
@@ -70,7 +70,7 @@ export class EarthRainWorld extends BaseWorld {
     }
 
     setupEnvironment(): void {
-        // gray, overcast sky
+        //gray overcast sky
         this.scene.background = new THREE.Color(0x6E6E6E);
 
         const floorGeometry = new THREE.PlaneGeometry(200, 200);
@@ -80,26 +80,26 @@ export class EarthRainWorld extends BaseWorld {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // Dim ambient light for a rainy mood
+        //Dim ambient light
         const ambientLight = new THREE.AmbientLight(0x555555, 0.5); // Lower intensity, grayish
         this.scene.add(ambientLight);
 
         //fog
         this.scene.fog = new THREE.FogExp2(0x666666, 0.06);
 
-        // Directional light for soft overcast effect
+        //Directional light for soft overcast
         const directionalLight = new THREE.DirectionalLight(0xAAAAAA, 0.7);
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         this.scene.add(directionalLight);
 
-        // Add Rain Clouds
+        //Add Rain Clouds
         this.createRainClouds();
 
     }
 
     private createRainClouds(): void {
-        const cloudMaterial = new THREE.MeshStandardMaterial({ color: 0x4A4A4A }); // Dark gray for storm clouds
+        const cloudMaterial = new THREE.MeshStandardMaterial({ color: 0x4A4A4A }); // Dark gray
 
         for (let i = 0; i < 10; i++) { // number of clouds
             const cloud = new THREE.Group();
@@ -141,15 +141,15 @@ export class MoonWorld extends BaseWorld {
         const radius = 1000;
         const moonSurfaceGeometry = new THREE.SphereGeometry(radius, 128, 128);
         const moonSurfaceMaterial = new THREE.MeshStandardMaterial({
-            color: 0x555555, // Gray lunar surface
-            side: THREE.FrontSide, // Render normally
+            color: 0x555555,
+            side: THREE.FrontSide,
         });
         const moonSurface = new THREE.Mesh(moonSurfaceGeometry, moonSurfaceMaterial);
         moonSurface.receiveShadow = true;
-        moonSurface.position.set(0, -radius, 0); // Move it down so the player is on top
+        moonSurface.position.set(0, -radius, 0);
         this.scene.add(moonSurface);
 
-        // Add floating stars
+        //Add floating stars
         const starGeometry = new THREE.BufferGeometry();
         const starVertices = [];
         for (let i = 0; i < 200; i++) {
@@ -164,7 +164,7 @@ export class MoonWorld extends BaseWorld {
         const stars = new THREE.Points(starGeometry, starMaterial);
         this.scene.add(stars);
 
-        // Dim lighting to increase depth
+        //Dim lighting to increase depth
         const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(5, 10, 5);
         light.castShadow = true;
@@ -174,7 +174,7 @@ export class MoonWorld extends BaseWorld {
 
 export class SpaceWorld extends BaseWorld {
     constructor() {
-        super(0, 0, 0, 0.01, {x: 0, y: 0, z: 0}, false); // No gravity, no friction, no density
+        super(0, 0, 0, 0.01, {x: 0, y: 0, z: 0}, false);
     }
 
     setupEnvironment(): void {
@@ -183,9 +183,9 @@ export class SpaceWorld extends BaseWorld {
         // Add Floating Stars
         const starGeometry = new THREE.BufferGeometry();
         const starVertices = [];
-        for (let i = 0; i < 500; i++) { // More stars for a better effect
+        for (let i = 0; i < 500; i++) {
             starVertices.push(
-                (Math.random() - 0.5) * 2000,  // Spread them out more
+                (Math.random() - 0.5) * 2000,
                 (Math.random() - 0.5) * 2000,
                 (Math.random() - 0.5) * 2000
             );
@@ -195,9 +195,9 @@ export class SpaceWorld extends BaseWorld {
         const stars = new THREE.Points(starGeometry, starMaterial);
         this.scene.add(stars);
 
-        // Add the Sun (Closer but Smaller)
-        const sunSize = 300; // Smaller sun, but closer
-        const sunDistance = 5; // Moved closer for visibility
+        // Add the Sun
+        const sunSize = 300;
+        const sunDistance = 5;
 
         const sunGeometry = new THREE.SphereGeometry(sunSize, 64, 64);
         const sunMaterial = new THREE.MeshStandardMaterial({
@@ -208,12 +208,10 @@ export class SpaceWorld extends BaseWorld {
 
         const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 
-        // Position the Sun closer but still far enough
         sun.position.set(sunDistance, 0, -600);
         this.scene.add(sun);
 
-        // 🔆 Add a Bright Light Source for the Sun
-        const sunLight = new THREE.PointLight(0xffffff, 3.5, 40000000); // Brighter but reduced range
+        const sunLight = new THREE.PointLight(0xffffff, 3.5, 40000000);
         sunLight.position.set(sunDistance, 0, -600);
         this.scene.add(sunLight);
     }

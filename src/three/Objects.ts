@@ -84,7 +84,7 @@ const earthObjects: WorldObject[] = [
         size: { x: 0.3, y: 0.3, z: 0.3 },
         staticFriction: 0.2,
         kineticFriction: 0.1,
-        bounciness: 0.9, // Super bouncy
+        bounciness: 0.9,
         inertia: { xx: 5, yy: 5, zz: 5 },
         drag: 1.07
     },
@@ -172,7 +172,7 @@ const earthObjects: WorldObject[] = [
     },
 
 
-    // Ice Patch (Super Slippery Zone)
+    // Ice Patch
     {
         name: "Ice Patch",
         color: 0x00ffff,
@@ -187,7 +187,7 @@ const earthObjects: WorldObject[] = [
         drag: 1.07
     },
 
-    // Dominos (for fun chain reactions)
+    // Dominos
     {
         name: "Domino 1",
         color: 0x1e90ff,
@@ -345,7 +345,7 @@ const earthObjects: WorldObject[] = [
 
 
 const moonObjects: WorldObject[] = [
-    //  Moon Rocks (Varied sizes, high density, low bounciness)
+    //  Moon Rocks
     {
         name: "Small Moon Rock",
         color: 0x777777, // Gray
@@ -355,7 +355,7 @@ const moonObjects: WorldObject[] = [
         size: { x: 0.5, y: 0.5, z: 0.5 },
         staticFriction: 0.9,
         kineticFriction: 0.8,
-        bounciness: 0.1, // Almost no bounce
+        bounciness: 0.1,
         inertia: { xx: 2, yy: 2, zz: 2 },
         drag: 0.9
     },
@@ -368,7 +368,7 @@ const moonObjects: WorldObject[] = [
         size: { x: 1.2, y: 1, z: 1.3 },
         staticFriction: 0.95,
         kineticFriction: 0.85,
-        bounciness: 0.05, // No real bounce
+        bounciness: 0.05,
         inertia: { xx: 4, yy: 4, zz: 4 },
         drag: 0.95
     },
@@ -381,13 +381,13 @@ const moonObjects: WorldObject[] = [
         size: { x: 3, y: 2.5, z: 3 },
         staticFriction: 0.98,
         kineticFriction: 0.9,
-        bounciness: 0.02, // Heavy, barely bounces
+        bounciness: 0.02,
         inertia: { xx: 10, yy: 10, zz: 10 },
         drag: 1.1
     },
     {
         name: "Flat Moon Slab",
-        color: 0x444444, // Almost black rock
+        color: 0x444444,
         position: { x: 2, y: 0.5, z: 6 },
         mass: 15,
         size: { x: 2, y: 0.3, z: 1.5 },
@@ -421,7 +421,7 @@ const moonObjects: WorldObject[] = [
         size: { x: 1, y: 0.5, z: 1.2 },
         staticFriction: 0.45,
         kineticFriction: 0.35,
-        bounciness: 0.85, // Still very bouncy
+        bounciness: 0.85,
         inertia: { xx: 0.8, yy: 0.8, zz: 0.8 },
         drag: 1.15
     },
@@ -433,7 +433,7 @@ const moonObjects: WorldObject[] = [
         size: { x: 2, y: 1, z: 2 },
         staticFriction: 0.5,
         kineticFriction: 0.4,
-        bounciness: 0.7, // Bounces a lot but heavy
+        bounciness: 0.7,
         inertia: { xx: 2, yy: 2, zz: 2 },
         drag: 1.1
     },
@@ -595,73 +595,73 @@ function getRandom(min: number, max: number) {
     return Math.random() * (max - min) + min;
 }
 
-// Generate 250+ small asteroid cubes (very close together)
+// Random asteroid generator
 for (let i = 0; i < 250; i++) {
     spaceObjects.push({
         name: "Small Asteroid Cube",
-        color: 0x888888, // Gray rock-like color
+        color: 0x888888,
         position: {
-            x: getRandom(-15, 15),  // Super tight clustering
+            x: getRandom(-15, 15),
             y: getRandom(-15, 15),
             z: getRandom(-15, 15)
         },
-        mass: getRandom(0.5, 2), // Small but varied mass
+        mass: getRandom(0.5, 2),
         size: {
-            x: getRandom(0.2, 0.6), // Smaller for better explosion effect
+            x: getRandom(0.2, 0.6),
             y: getRandom(0.2, 0.6),
             z: getRandom(0.2, 0.6)
         },
         staticFriction: getRandom(0.2, 0.5),
         kineticFriction: getRandom(0.1, 0.4),
-        bounciness: getRandom(0.6, 1.2), // Very bouncy for chain reactions
+        bounciness: getRandom(0.6, 1.2),
         inertia: {
             xx: getRandom(0.2, 1.5),
             yy: getRandom(0.2, 1.5),
             zz: getRandom(0.2, 1.5)
         },
-        drag: getRandom(0.05, 0.15) // Less drag, so they move a lot
+        drag: getRandom(0.05, 0.15)
     });
 }
 
-// Generate 100 medium-sized asteroid cubes (still tightly packed)
+// Medium rock generator
 for (let i = 0; i < 100; i++) {
     spaceObjects.push({
         name: "Medium Asteroid Cube",
         color: 0x666666, // Darker rocks
         position: {
-            x: getRandom(-18, 18),  // Slightly larger range
+            x: getRandom(-18, 18),
             y: getRandom(-18, 18),
             z: getRandom(-18, 18)
         },
-        mass: getRandom(3, 7), // Medium weight asteroids
+        mass: getRandom(3, 7),
         size: {
-            x: getRandom(0.6, 1.2), // Medium asteroids
+            x: getRandom(0.6, 1.2),
             y: getRandom(0.6, 1.2),
             z: getRandom(0.6, 1.2)
         },
         staticFriction: getRandom(0.3, 0.6),
         kineticFriction: getRandom(0.2, 0.5),
-        bounciness: getRandom(0.4, 1.0), // Some will bounce, some won’t
+        bounciness: getRandom(0.4, 1.0),
         inertia: {
             xx: getRandom(1, 3),
             yy: getRandom(1, 3),
             zz: getRandom(1, 3)
         },
-        drag: getRandom(0.1, 0.25) // Slight movement resistance
+        drag: getRandom(0.1, 0.25)
     });
 }
 
-// Generate 50 large, heavier asteroid cubes (close, but bigger gaps)
+// Heavy rocks
 for (let i = 0; i < 50; i++) {
     spaceObjects.push({
         name: "Large Asteroid Cube",
-        color: 0x444444, // Darkest rocks
+        color: 0x444444,
         position: {
             x: getRandom(-20, 20),  // Slightly more spread
             y: getRandom(-20, 20),
             z: getRandom(-20, 20)
         },
-        mass: getRandom(7, 15), // Heaviest asteroids
+        mass: getRandom(7, 15),
         size: {
             x: getRandom(1.2, 2.5), // Large chunks
             y: getRandom(1.2, 2.5),
@@ -669,18 +669,18 @@ for (let i = 0; i < 50; i++) {
         },
         staticFriction: getRandom(0.4, 0.7),
         kineticFriction: getRandom(0.3, 0.6),
-        bounciness: getRandom(0.2, 0.7), // Some will bounce, others will just crash
+        bounciness: getRandom(0.2, 0.7),
         inertia: {
             xx: getRandom(2, 5),
             yy: getRandom(2, 5),
             zz: getRandom(2, 5)
         },
-        drag: getRandom(0.15, 0.3) // Slight resistance, but still free-moving
+        drag: getRandom(0.15, 0.3)
     });
 }
 
 
-// Function to create world objects in the scene and physics world
+//Function to create world objects in the scene and physics world
 export function addWorldObjects(
     id: number,
     scene: THREE.Scene,
@@ -709,23 +709,23 @@ export function addWorldObjects(
             const loadedTexture = textureLoader.load(`/textures/${texture}`);
 
             if (name.includes("Flag")) {
-                loadedTexture.wrapS = THREE.ClampToEdgeWrapping; // No horizontal tiling
-                loadedTexture.wrapT = THREE.ClampToEdgeWrapping; // No vertical tiling
-                loadedTexture.repeat.set(1, 1); // Stretch texture across the flag
+                loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+                loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+                loadedTexture.repeat.set(1, 1);
             } else {
                 loadedTexture.wrapS = THREE.RepeatWrapping;
                 loadedTexture.wrapT = THREE.RepeatWrapping;
-                loadedTexture.repeat.set(2, 2); // Keep tiling for other objects
+                loadedTexture.repeat.set(2, 2);
             }
 
             material = new THREE.MeshPhongMaterial({
-                map: loadedTexture,  // Apply texture
-                shininess: 30,       // Add shininess
-                specular: 0x444444,  // Simulate reflections
+                map: loadedTexture,
+                shininess: 30,
+                specular: 0x444444,
             });
         } else {
             material = new THREE.MeshPhongMaterial({
-                color: color, // Fallback solid color
+                color: color,
                 shininess: 30,
                 specular: 0x444444,
             });
